@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
@@ -100,12 +101,12 @@ export default function LoginPage() {
             {loading ? 'กำลังเข้าสู่ระบบ...' : '🔐 เข้าสู่ระบบ'}
           </button>
 
-          <a
+          <Link
             href="/"
             className="block w-full rounded-lg border-2 border-blue-600 px-4 py-2.5 text-center font-medium text-blue-600 transition hover:bg-blue-600 hover:text-white"
           >
             📊 ไปหน้าสารสนเทศถนน
-          </a>
+          </Link>
         </form>
 
         {/* Footer */}
