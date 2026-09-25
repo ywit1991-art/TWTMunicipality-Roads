@@ -168,7 +168,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Map — เต็มพื้นที่ */}
+        {/* Map */}
         <div id="map" className="rounded-2xl bg-white p-4 shadow">
           <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-700">
             🗺️ แผนที่เส้นทางทั้งหมด
@@ -218,24 +218,21 @@ export default function HomePage() {
                 </thead>
                 <tbody>
                   {filtered.map((road, i) => {
-                    const isFocused = focusRoad?.id === road.id;
+                    const isSelected = selectedRoad?.id === road.id;
                     return (
                       <tr
                         key={road.id}
                         onClick={() => {
-                          setFocusRoad(road);
+                          // ⭐ เปิด popup อย่างเดียว ไม่บังคับแผนที่ให้บิน
                           setSelectedRoad(road);
                         }}
                         className={`cursor-pointer border-b border-slate-100 transition ${
-                          isFocused ? 'bg-blue-50' : 'hover:bg-blue-50'
+                          isSelected ? 'bg-blue-100' : 'hover:bg-blue-50'
                         }`}
                       >
                         <td className="px-4 py-3 text-slate-400">{i + 1}</td>
                         <td className="px-4 py-3 font-medium text-slate-800">
                           {road.name}
-                          {isFocused && (
-                            <span className="ml-2 text-xs text-blue-600">📍</span>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-slate-500">
                           {road.note || '-'}
@@ -271,7 +268,7 @@ export default function HomePage() {
         </footer>
       </main>
 
-      {/* Popup รายละเอียดถนน — เด้งทับกลางจอ */}
+      {/* Popup รายละเอียดถนน */}
       {selectedRoad && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
@@ -281,7 +278,6 @@ export default function HomePage() {
             className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
               <h3 className="text-lg font-bold">🛣️ {selectedRoad.name}</h3>
               <button
@@ -292,7 +288,6 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="space-y-3 p-5 text-slate-700">
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-slate-100 p-3">
@@ -347,6 +342,12 @@ export default function HomePage() {
                   onClick={() => {
                     setFocusRoad(selectedRoad);
                     setSelectedRoad(null);
+                    // เลื่อนไปดูแผนที่ด้านบน
+                    setTimeout(() => {
+                      document
+                        .getElementById('map')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
                   }}
                   className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium transition hover:bg-slate-100"
                 >
