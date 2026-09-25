@@ -31,6 +31,12 @@ export default function AdminPage() {
   const [savedRoad, setSavedRoad] = useState<{ name: string; distance: number } | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // input พิกัด
+  const [startLat, setStartLat] = useState('');
+  const [startLng, setStartLng] = useState('');
+  const [endLat, setEndLat] = useState('');
+  const [endLng, setEndLng] = useState('');
+
   // รายการถนนทั้งหมด
   const [roads, setRoads] = useState<Road[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -49,21 +55,56 @@ export default function AdminPage() {
     loadRoads();
   }, []);
 
+  function syncInputs(s: LatLng | null, e: LatLng | null) {
+    setStartLat(s ? String(s.lat) : '');
+    setStartLng(s ? String(s.lng) : '');
+    setEndLat(e ? String(e.lat) : '');
+    setEndLng(e ? String(e.lng) : '');
+  }
+
   function handlePick(p: LatLng) {
     if (picking === 'start') {
       setStart(p);
+      setStartLat(String(p.lat));
+      setStartLng(String(p.lng));
       setPicking('end');
     } else {
       setEnd(p);
+      setEndLat(String(p.lat));
+      setEndLng(String(p.lng));
     }
     setDistance(null);
   }
 
   function handleDrag(which: 'start' | 'end', p: LatLng) {
-    if (which === 'start') setStart(p);
-    else setEnd(p);
+    if (which === 'start') {
+      setStart(p);
+      setStartLat(String(p.lat));
+      setStartLng(String(p.lng));
+    } else {
+      setEnd(p);
+      setEndLat(String(p.lat));
+      setEndLng(String(p.lng));
+    }
     setDistance(null);
     setMessage('');
+  }
+
+  // เมื่อผู้ใช้พิมพ์พิกัด → อัปเดต marker
+  function applyStartFromInput() {
+    const lat = parseFloat(startLat);
+    const lng = parseFloat(startLng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    setStart({ lat, lng });
+    setDistance(null);
+  }
+
+  function applyEndFromInput() {
+    const lat = parseFloat(endLat);
+    const lng = parseFloat(endLng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    setEnd({ lat, lng });
+    setDistance(null);
   }
 
   async function handleCalculate() {
@@ -101,7 +142,6 @@ export default function AdminPage() {
       };
 
       if (editingId) {
-        // อัปเดตข้อมูลเดิม
         const { error } = await supabase
           .from('roads')
           .update(payload)
@@ -110,7 +150,6 @@ export default function AdminPage() {
         setMessage('✅ แก้ไขสำเร็จ!');
         setEditingId(null);
       } else {
-        // เพิ่มใหม่
         const { error } = await supabase.from('roads').insert(payload);
         if (error) throw error;
         setMessage('✅ บันทึกสำเร็จ!');
@@ -123,6 +162,7 @@ export default function AdminPage() {
       setStart(null);
       setEnd(null);
       setDistance(null);
+      syncInputs(null, null);
       await loadRoads();
     } catch (e: any) {
       setMessage('❌ ' + e.message);
@@ -147,10 +187,13 @@ export default function AdminPage() {
   }
 
   function handleEdit(road: Road) {
+    const s = { lat: road.start_lat, lng: road.start_lng };
+    const e = { lat: road.end_lat, lng: road.end_lng };
     setName(road.name);
     setNote(road.note ?? '');
-    setStart({ lat: road.start_lat, lng: road.start_lng });
-    setEnd({ lat: road.end_lat, lng: road.end_lng });
+    setStart(s);
+    setEnd(e);
+    syncInputs(s, e);
     setDistance(road.distance_m);
     setEditingId(road.id);
     setSavedRoad(null);
@@ -166,6 +209,7 @@ export default function AdminPage() {
     setStart(null);
     setEnd(null);
     setDistance(null);
+    syncInputs(null, null);
     setPicking('start');
     setMessage('');
   }
@@ -180,12 +224,13 @@ export default function AdminPage() {
     setEditingId(null);
     setName('');
     setNote('');
+    syncInputs(null, null);
   }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        {/* Header */}
+        {/* Header — ไม่มีคำอธิบายแล้ว */}
         <header className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg">
           <div className="flex items-center gap-4">
             <img
@@ -202,9 +247,6 @@ export default function AdminPage() {
               </p>
             </div>
           </div>
-          <p className="mt-3 text-xs opacity-90">
-            💡 คลิกบนแผนที่เพื่อเลือกจุดเริ่มต้น → จุดสิ้นสุด แล้วคำนวณระยะทาง
-          </p>
         </header>
 
         {/* Alert กำลังแก้ไข */}
@@ -252,23 +294,85 @@ export default function AdminPage() {
               />
             </div>
 
+            {/* พิกัดเริ่มต้น */}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-emerald-600">
+                  🟢 จุดเริ่มต้น
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPicking('start')}
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    picking === 'start'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  }`}
+                >
+                  เลือกบนแผนที่
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={startLat}
+                  onChange={(e) => setStartLat(e.target.value)}
+                  onBlur={applyStartFromInput}
+                  placeholder="ละติจูด (Lat)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+                <input
+                  value={startLng}
+                  onChange={(e) => setStartLng(e.target.value)}
+                  onBlur={applyStartFromInput}
+                  placeholder="ลองจิจูด (Lng)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* พิกัดสิ้นสุด */}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-red-500">
+                  🔴 จุดสิ้นสุด
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPicking('end')}
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    picking === 'end'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  }`}
+                >
+                  เลือกบนแผนที่
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={endLat}
+                  onChange={(e) => setEndLat(e.target.value)}
+                  onBlur={applyEndFromInput}
+                  placeholder="ละติจูด (Lat)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                />
+                <input
+                  value={endLng}
+                  onChange={(e) => setEndLng(e.target.value)}
+                  onBlur={applyEndFromInput}
+                  placeholder="ลองจิจูด (Lng)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+
             <div className="rounded-lg bg-slate-50 p-3 text-sm">
               <div className="flex justify-between">
-                <span>กำลังเลือก:</span>
+                <span>กำลังเลือกบนแผนที่:</span>
                 <span className="font-semibold text-blue-600">
                   {picking === 'start' ? 'จุดเริ่มต้น' : 'จุดสิ้นสุด'}
                 </span>
               </div>
-              {start && (
-                <div className="mt-1 text-slate-600">
-                  🟢 Start: {start.lat.toFixed(5)}, {start.lng.toFixed(5)}
-                </div>
-              )}
-              {end && (
-                <div className="text-slate-600">
-                  🔴 End: {end.lat.toFixed(5)}, {end.lng.toFixed(5)}
-                </div>
-              )}
             </div>
 
             <div className="flex gap-2">
@@ -413,7 +517,6 @@ export default function AdminPage() {
                             onClick={() => handleEdit(road)}
                             disabled={loading}
                             className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"
-                            title="แก้ไข"
                           >
                             ✏️ แก้ไข
                           </button>
@@ -421,7 +524,6 @@ export default function AdminPage() {
                             onClick={() => handleDelete(road.id, road.name)}
                             disabled={loading}
                             className="rounded-lg bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
-                            title="ลบ"
                           >
                             🗑️ ลบ
                           </button>
