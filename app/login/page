@@ -1,0 +1,99 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      setLoading(false);
+      return;
+    }
+
+    router.push('/admin');
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center text-white">
+          <img
+            src="/logo.png"
+            alt="โลโก้เทศบาล"
+            className="mx-auto h-20 w-20 rounded-full bg-white p-1 shadow-md"
+          />
+          <h1 className="mt-3 text-lg font-bold">
+            ระบบสารสนเทศข้อมูลถนนท้องถิ่น
+          </h1>
+          <p className="mt-1 text-xs opacity-90">
+            เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)
+          </p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4 p-6">
+          <div>
+            <label className="mb-1 block text-sm font-medium">อีเมล</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="admin@example.com"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">รหัสผ่าน</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              ❌ {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'กำลังเข้าสู่ระบบ...' : '🔐 เข้าสู่ระบบ'}
+          </button>
+
+          <a
+            href="/"
+            className="block text-center text-sm text-slate-500 hover:text-slate-700"
+          >
+            ← กลับหน้าแรก
+          </a>
+        </form>
+      </div>
+    </div>
+  );
+}
