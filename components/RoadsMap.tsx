@@ -33,6 +33,8 @@ const COLORS = [
   '#06b6d4',
 ];
 
+export const ROAD_COLORS = COLORS;
+
 async function fetchRoute(road: Road): Promise<[number, number][]> {
   const url =
     `https://router.project-osrm.org/route/v1/driving/` +
@@ -83,9 +85,11 @@ function MapController({
 export default function RoadsMap({
   roads,
   focusRoad,
+  onRoadClick,
 }: {
   roads: Road[];
   focusRoad?: Road | null;
+  onRoadClick?: (road: Road) => void;
 }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
 
@@ -109,7 +113,7 @@ export default function RoadsMap({
     <MapContainer
       center={[19.1907, 99.9315]}
       zoom={13}
-      style={{ height: '600px', width: '100%', borderRadius: '12px' }}
+      style={{ height: '700px', width: '100%', borderRadius: '12px' }}
     >
       <TileLayer
         attribution='&copy; OpenStreetMap'
@@ -142,6 +146,9 @@ export default function RoadsMap({
                       weight: isFocused ? 8 : 5,
                       opacity: isFocused ? 1 : 0.85,
                     });
+                  },
+                  click: () => {
+                    onRoadClick?.(road);
                   },
                 }}
               >

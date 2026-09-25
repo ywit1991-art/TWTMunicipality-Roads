@@ -9,7 +9,6 @@ const RoadsMap = dynamic(() => import('@/components/RoadsMap'), { ssr: false });
 
 export default function HomePage() {
   const [roads, setRoads] = useState<Road[]>([]);
-  const [filtered, setFiltered] = useState<Road[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [focusRoad, setFocusRoad] = useState<Road | null>(null);
@@ -18,24 +17,9 @@ export default function HomePage() {
   useEffect(() => {
     fetch('/api/roads')
       .then((r) => r.json())
-      .then((d) => {
-        setRoads(d.roads ?? []);
-        setFiltered(d.roads ?? []);
-      })
+      .then((d) => setRoads(d.roads ?? []))
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(roads);
-    } else {
-      const result = roads.filter((r) =>
-        r.name.toLowerCase().includes(search.toLowerCase())
-      );
-      setFiltered(result);
-      if (result.length === 1) setFocusRoad(result[0]);
-    }
-  }, [search, roads]);
 
   const totalDistance = roads.reduce((sum, r) => sum + (r.distance_m ?? 0), 0) / 1000;
   const longestRoad = roads.reduce<Road | null>(
@@ -45,7 +29,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
+      {/* Hero */}
       <header className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 px-6 py-8 text-white shadow-lg">
         <div
           className="absolute inset-0 opacity-10"
@@ -141,13 +125,27 @@ export default function HomePage() {
             </span>
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSearch(v);
+                if (!v.trim()) {
+                  setFocusRoad(null);
+                } else {
+                  const found = roads.find((r) =>
+                    r.name.toLowerCase().includes(v.toLowerCase())
+                  );
+                  if (found) setFocusRoad(found);
+                }
+              }}
               placeholder="ค้นหาชื่อถนน..."
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-10 outline-none transition focus:border-blue-500 focus:bg-white"
             />
             {search && (
               <button
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  setSearch('');
+                  setFocusRoad(null);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
               >
                 ✕
@@ -159,7 +157,10 @@ export default function HomePage() {
               <span>📍 กำลังแสดง:</span>
               <span className="font-semibold">{focusRoad.name}</span>
               <button
-                onClick={() => setFocusRoad(null)}
+                onClick={() => {
+                  setFocusRoad(null);
+                  setSearch('');
+                }}
                 className="ml-auto text-slate-400 hover:text-slate-700"
               >
                 ล้างการโฟกัส
@@ -168,89 +169,120 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Map */}
+        {/* Map + Popup */}
         <div id="map" className="rounded-2xl bg-white p-4 shadow">
           <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-700">
             🗺️ แผนที่เส้นทางทั้งหมด
           </h2>
+          <p className="mb-3 text-sm text-slate-500">
+            💡 คลิกที่เส้นสีเพื่อดูรายละเอียดถนน
+          </p>
+
           {loading ? (
-            <div className="flex h-96 items-center justify-center text-slate-400">
+            <div className="flex h-[700px] items-center justify-center text-slate-400">
               <div className="text-center">
                 <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
                 กำลังโหลด...
               </div>
             </div>
           ) : roads.length === 0 ? (
-            <div className="flex h-96 items-center justify-center text-slate-400">
+            <div className="flex h-[700px] items-center justify-center text-slate-400">
               ยังไม่มีข้อมูลถนน
             </div>
           ) : (
-            <RoadsMap roads={filtered} focusRoad={focusRoad} />
-          )}
-        </div>
+            <div className="relative">
+              <RoadsMap
+                roads={roads}
+                focusRoad={focusRoad}
+                onRoadClick={(road) => setSelectedRoad(road)}
+              />
 
-        {/* Table */}
-        <div className="overflow-hidden rounded-2xl bg-white shadow">
-          <div className="flex items-center justify-between border-b border-slate-200 p-4">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-700">
-                📋 รายการถนน
-              </h2>
-              <p className="text-sm text-slate-500">
-                พบ {filtered.length} รายการ • คลิกเพื่อดูรายละเอียด
-              </p>
-            </div>
-          </div>
+              {/* Popup — ลอยมุมขวาในกรอบแผนที่ */}
+              {selectedRoad && (
+                <div className="absolute right-3 top-3 z-[1000] w-[320px] max-w-[calc(100%-24px)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 md:w-[360px]">
+                  <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-3 text-white">
+                    <h3 className="truncate text-base font-bold">
+                      🛣️ {selectedRoad.name}
+                    </h3>
+                    <button
+                      onClick={() => setSelectedRoad(null)}
+                      className="rounded-full bg-white/20 p-1 text-sm hover:bg-white/30"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-          {filtered.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">ไม่พบข้อมูล</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-100 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3 text-left">#</th>
-                    <th className="px-4 py-3 text-left">ชื่อถนน</th>
-                    <th className="px-4 py-3 text-left">หมายเหตุ</th>
-                    <th className="px-4 py-3 text-right">ระยะทาง</th>
-                    <th className="px-4 py-3 text-right">วันที่</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((road, i) => {
-                    const isSelected = selectedRoad?.id === road.id;
-                    return (
-                      <tr
-                        key={road.id}
-                        onClick={() => setSelectedRoad(road)}
-                        className={`cursor-pointer border-b border-slate-100 transition ${
-                          isSelected ? 'bg-blue-100' : 'hover:bg-blue-50'
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-slate-400">{i + 1}</td>
-                        <td className="px-4 py-3 font-medium text-slate-800">
-                          {road.name}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">
-                          {road.note || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono text-slate-700">
-                          {road.distance_m != null
-                            ? `${(road.distance_m / 1000).toFixed(3)} กม.`
+                  <div className="space-y-2 p-4 text-slate-700">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-slate-100 p-2.5">
+                        <div className="text-[10px] text-slate-500">ระยะทาง</div>
+                        <div className="text-base font-bold text-blue-600">
+                          {selectedRoad.distance_m
+                            ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
                             : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-500">
-                          {new Date(road.created_at).toLocaleDateString('th-TH', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: '2-digit',
-                          })}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-slate-100 p-2.5">
+                        <div className="text-[10px] text-slate-500">วันที่</div>
+                        <div className="text-xs font-bold">
+                          {new Date(selectedRoad.created_at).toLocaleDateString(
+                            'th-TH'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-slate-100 p-2.5">
+                      <div className="text-[10px] text-slate-500">
+                        พิกัดเริ่มต้น
+                      </div>
+                      <div className="font-mono text-[11px]">
+                        🟢 {selectedRoad.start_lat.toFixed(5)},{' '}
+                        {selectedRoad.start_lng.toFixed(5)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-slate-100 p-2.5">
+                      <div className="text-[10px] text-slate-500">
+                        พิกัดสิ้นสุด
+                      </div>
+                      <div className="font-mono text-[11px]">
+                        🔴 {selectedRoad.end_lat.toFixed(5)},{' '}
+                        {selectedRoad.end_lng.toFixed(5)}
+                      </div>
+                    </div>
+
+                    {selectedRoad.note && (
+                      <div className="rounded-lg bg-slate-100 p-2.5">
+                        <div className="text-[10px] text-slate-500">
+                          หมายเหตุ
+                        </div>
+                        <div className="text-sm">{selectedRoad.note}</div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white transition hover:bg-blue-700"
+                      >
+                        🧭 Google Maps
+                      </a>
+                      <button
+                        onClick={() => {
+                          setFocusRoad(selectedRoad);
+                          setSelectedRoad(null);
+                        }}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium transition hover:bg-slate-100"
+                      >
+                        🗺️ ซูม
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -264,92 +296,6 @@ export default function HomePage() {
           <p className="mt-1 text-xs">Powered by Next.js • Supabase • Vercel</p>
         </footer>
       </main>
-
-      {/* Popup รายละเอียด — มุมล่างขวา ไม่ทับแผนที่ */}
-      {selectedRoad && (
-        <div className="fixed bottom-4 right-4 z-50 w-[340px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 md:w-[380px]">
-          {/* Header */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-3 text-white">
-            <h3 className="truncate text-base font-bold">
-              🛣️ {selectedRoad.name}
-            </h3>
-            <button
-              onClick={() => setSelectedRoad(null)}
-              className="rounded-full bg-white/20 p-1 text-sm hover:bg-white/30"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="space-y-2 p-4 text-slate-700">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg bg-slate-100 p-2.5">
-                <div className="text-xs text-slate-500">ระยะทาง</div>
-                <div className="text-base font-bold text-blue-600">
-                  {selectedRoad.distance_m
-                    ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
-                    : '-'}
-                </div>
-              </div>
-              <div className="rounded-lg bg-slate-100 p-2.5">
-                <div className="text-xs text-slate-500">วันที่</div>
-                <div className="text-sm font-bold">
-                  {new Date(selectedRoad.created_at).toLocaleDateString('th-TH')}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-slate-100 p-2.5">
-              <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
-              <div className="font-mono text-xs">
-                🟢 {selectedRoad.start_lat.toFixed(6)},{' '}
-                {selectedRoad.start_lng.toFixed(6)}
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-slate-100 p-2.5">
-              <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
-              <div className="font-mono text-xs">
-                🔴 {selectedRoad.end_lat.toFixed(6)},{' '}
-                {selectedRoad.end_lng.toFixed(6)}
-              </div>
-            </div>
-
-            {selectedRoad.note && (
-              <div className="rounded-lg bg-slate-100 p-2.5">
-                <div className="text-xs text-slate-500">หมายเหตุ</div>
-                <div className="text-sm">{selectedRoad.note}</div>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white transition hover:bg-blue-700"
-              >
-                🧭 Google Maps
-              </a>
-              <button
-                onClick={() => {
-                  setFocusRoad(selectedRoad);
-                  setSelectedRoad(null);
-                  setTimeout(() => {
-                    document
-                      .getElementById('map')
-                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium transition hover:bg-slate-100"
-              >
-                🗺️ ดูแผนที่
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
