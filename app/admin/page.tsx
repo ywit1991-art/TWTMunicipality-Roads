@@ -23,6 +23,7 @@ type Road = {
 export default function AdminPage() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [userName, setUserName] = useState('');
 
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
@@ -43,18 +44,22 @@ export default function AdminPage() {
   const [roads, setRoads] = useState<Road[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
-  // ตรวจสอบ login + โหลดข้อมูล
+  // ตรวจสอบ login ด้วย localStorage
   useEffect(() => {
-    async function init() {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push('/login');
-        return;
-      }
-      setCheckingAuth(false);
-      loadRoads();
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      router.push('/login');
+      return;
     }
-    init();
+    try {
+      const user = JSON.parse(userStr);
+      setUserName(user.name ?? '');
+    } catch {
+      router.push('/login');
+      return;
+    }
+    setCheckingAuth(false);
+    loadRoads();
   }, [router]);
 
   async function loadRoads() {
@@ -67,9 +72,9 @@ export default function AdminPage() {
     setLoadingList(false);
   }
 
-  async function handleLogout() {
+  function handleLogout() {
     if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
-    await supabase.auth.signOut();
+    localStorage.removeItem('user');
     router.push('/login');
   }
 
@@ -274,6 +279,9 @@ export default function AdminPage() {
               <p className="mt-0.5 text-sm font-semibold">
                 เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)
               </p>
+              {userName && (
+                <p className="mt-0.5 text-xs opacity-90">👤 {userName}</p>
+              )}
             </div>
             <button
               onClick={handleLogout}
