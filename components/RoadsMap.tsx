@@ -1,10 +1,9 @@
 'use client';
-
 import {
   MapContainer,
   TileLayer,
-  Marker,
   Polyline,
+  Tooltip,
   useMap,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -23,7 +22,15 @@ export type Road = {
   created_at: string;
 };
 
-const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = [
+  '#ef4444',
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+];
 
 async function fetchRoute(road: Road): Promise<[number, number][]> {
   const url =
@@ -114,47 +121,47 @@ export default function RoadsMap({
         const color = COLORS[i % COLORS.length];
         const route = routes[road.id];
         const isFocused = focusRoad?.id === road.id;
-        const midPoint =
-          route && route.length > 0 ? route[Math.floor(route.length / 2)] : null;
 
         return (
           <div key={road.id}>
-            {/* เส้นทางเท่านั้น — ไม่มี marker */}
             {route && route.length > 0 && (
-              <>
-                <Polyline
-                  positions={route}
-                  pathOptions={{
-                    color,
-                    weight: isFocused ? 8 : 5,
-                    opacity: isFocused ? 1 : 0.85,
-                  }}
-                />
-                {midPoint && (
-                  <Marker
-                    position={midPoint}
-                    icon={L.divIcon({
-                      className: 'road-label',
-                      html: `<div style="
-                        background-color: ${color} !important;
-                        color: #ffffff !important;
-                        padding: 4px 12px;
-                        border-radius: 999px;
-                        font-size: 12px;
-                        font-weight: 700;
-                        font-family: 'Noto Sans Thai', sans-serif;
-                        white-space: nowrap;
-                        transform: translate(-50%, -50%);
-                        display: inline-block;
-                        border: 2px solid #ffffff;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                      ">${road.name}</div>`,
-                      iconSize: [0, 0],
-                      iconAnchor: [0, 0],
-                    })}
-                  />
-                )}
-              </>
+              <Polyline
+                positions={route}
+                pathOptions={{
+                  color,
+                  weight: isFocused ? 8 : 5,
+                  opacity: isFocused ? 1 : 0.85,
+                }}
+                eventHandlers={{
+                  mouseover: (e) => {
+                    e.target.setStyle({ weight: 8, opacity: 1 });
+                  },
+                  mouseout: (e) => {
+                    e.target.setStyle({
+                      weight: isFocused ? 8 : 5,
+                      opacity: isFocused ? 1 : 0.85,
+                    });
+                  },
+                }}
+              >
+                <Tooltip sticky>
+                  <div
+                    style={{
+                      fontFamily: "'Noto Sans Thai', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      color: '#1e293b',
+                    }}
+                  >
+                    🛣️ {road.name}
+                    {road.distance_m != null && (
+                      <span style={{ marginLeft: 6, color: '#64748b' }}>
+                        • {(road.distance_m / 1000).toFixed(3)} กม.
+                      </span>
+                    )}
+                  </div>
+                </Tooltip>
+              </Polyline>
             )}
           </div>
         );
