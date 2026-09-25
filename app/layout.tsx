@@ -10,8 +10,14 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: 'ระบบจัดการข้อมูลถนน',
-  description: 'ระบบสารสนเทศสำหรับจัดเก็บข้อมูลถนนของเทศบาล',
+  title: 'ระบบสารสนเทศข้อมูลถนนท้องถิ่น - เทศบาลตำบลท่าวังทอง',
+  description:
+    'ระบบสารสนเทศข้อมูลถนนท้องถิ่น เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({

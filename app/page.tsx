@@ -1,206 +1,506 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import type { Road } from '@/components/RoadsMap';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { getRoadDistance, LatLng } from '@/lib/osrm';
 
-const RoadsMap = dynamic(() => import('@/components/RoadsMap'), { ssr: false });
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
-export default function HomePage() {
+type Road = {
+  id: number;
+  name: string;
+  note: string | null;
+  start_lat: number;
+  start_lng: number;
+  end_lat: number;
+  end_lng: number;
+  distance_m: number | null;
+  created_at: string;
+};
+
+export default function AdminPage() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  const [name, setName] = useState('');
+  const [note, setNote] = useState('');
+  const [start, setStart] = useState<LatLng | null>(null);
+  const [end, setEnd] = useState<LatLng | null>(null);
+  const [picking, setPicking] = useState<'start' | 'end'>('start');
+  const [distance, setDistance] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [savedRoad, setSavedRoad] = useState<{ name: string; distance: number } | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [startLat, setStartLat] = useState('');
+  const [startLng, setStartLng] = useState('');
+  const [endLat, setEndLat] = useState('');
+  const [endLng, setEndLng] = useState('');
+
   const [roads, setRoads] = useState<Road[]>([]);
-  const [filtered, setFiltered] = useState<Road[]>([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [focusRoad, setFocusRoad] = useState<Road | null>(null);
-  const [selectedRoad, setSelectedRoad] = useState<Road | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
 
+  // ตรวจสอบ login + โหลดข้อมูล
   useEffect(() => {
-    fetch('/api/roads')
-      .then((r) => r.json())
-      .then((d) => {
-        setRoads(d.roads ?? []);
-        setFiltered(d.roads ?? []);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(roads);
-    } else {
-      const result = roads.filter((r) =>
-        r.name.toLowerCase().includes(search.toLowerCase())
-      );
-      setFiltered(result);
-      if (result.length === 1) setFocusRoad(result[0]);
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.push('/login');
+        return;
+      }
+      setCheckingAuth(false);
+      loadRoads();
     }
-  }, [search, roads]);
+    init();
+  }, [router]);
 
-  const totalDistance = roads.reduce((sum, r) => sum + (r.distance_m ?? 0), 0) / 1000;
-  const longestRoad = roads.reduce<Road | null>(
-    (max, r) => (!max || (r.distance_m ?? 0) > (max.distance_m ?? 0) ? r : max),
-    null
-  );
+  async function loadRoads() {
+    setLoadingList(true);
+    const { data, error } = await supabase
+      .from('roads')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error) setRoads(data ?? []);
+    setLoadingList(false);
+  }
+
+  async function handleLogout() {
+    if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
+
+  function syncInputs(s: LatLng | null, e: LatLng | null) {
+    setStartLat(s ? String(s.lat) : '');
+    setStartLng(s ? String(s.lng) : '');
+    setEndLat(e ? String(e.lat) : '');
+    setEndLng(e ? String(e.lng) : '');
+  }
+
+  function handlePick(p: LatLng) {
+    if (picking === 'start') {
+      setStart(p);
+      setStartLat(String(p.lat));
+      setStartLng(String(p.lng));
+      setPicking('end');
+    } else {
+      setEnd(p);
+      setEndLat(String(p.lat));
+      setEndLng(String(p.lng));
+    }
+    setDistance(null);
+  }
+
+  function handleDrag(which: 'start' | 'end', p: LatLng) {
+    if (which === 'start') {
+      setStart(p);
+      setStartLat(String(p.lat));
+      setStartLng(String(p.lng));
+    } else {
+      setEnd(p);
+      setEndLat(String(p.lat));
+      setEndLng(String(p.lng));
+    }
+    setDistance(null);
+    setMessage('');
+  }
+
+  function applyStartFromInput() {
+    const lat = parseFloat(startLat);
+    const lng = parseFloat(startLng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    setStart({ lat, lng });
+    setDistance(null);
+  }
+
+  function applyEndFromInput() {
+    const lat = parseFloat(endLat);
+    const lng = parseFloat(endLng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    setEnd({ lat, lng });
+    setDistance(null);
+  }
+
+  async function handleCalculate() {
+    if (!start || !end) return alert('กรุณาเลือกจุดเริ่มต้นและสิ้นสุด');
+    setLoading(true);
+    try {
+      const r = await getRoadDistance(start, end);
+      setDistance(r.distance_m);
+      setMessage(`ระยะทางตามถนน: ${(r.distance_m / 1000).toFixed(3)} กม.`);
+    } catch (e: any) {
+      setMessage('❌ ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!name || !start || !end) return alert('กรอกข้อมูลให้ครบก่อน');
+    setLoading(true);
+    try {
+      let dist = distance;
+      if (dist === null) {
+        const r = await getRoadDistance(start, end);
+        dist = r.distance_m;
+      }
+
+      const payload = {
+        name,
+        note,
+        start_lat: start.lat,
+        start_lng: start.lng,
+        end_lat: end.lat,
+        end_lng: end.lng,
+        distance_m: dist,
+      };
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('roads')
+          .update(payload)
+          .eq('id', editingId);
+        if (error) throw error;
+        setMessage('✅ แก้ไขสำเร็จ!');
+        setEditingId(null);
+      } else {
+        const { error } = await supabase.from('roads').insert(payload);
+        if (error) throw error;
+        setMessage('✅ บันทึกสำเร็จ!');
+        setSavedRoad({ name, distance: dist });
+      }
+
+      setName('');
+      setNote('');
+      setPicking('start');
+      setStart(null);
+      setEnd(null);
+      setDistance(null);
+      syncInputs(null, null);
+      await loadRoads();
+    } catch (e: any) {
+      setMessage('❌ ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id: number, roadName: string) {
+    if (!confirm(`ยืนยันลบถนน "${roadName}" หรือไม่?`)) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('roads').delete().eq('id', id);
+      if (error) throw error;
+      setMessage('🗑️ ลบสำเร็จ!');
+      await loadRoads();
+    } catch (e: any) {
+      setMessage('❌ ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleEdit(road: Road) {
+    const s = { lat: road.start_lat, lng: road.start_lng };
+    const e = { lat: road.end_lat, lng: road.end_lng };
+    setName(road.name);
+    setNote(road.note ?? '');
+    setStart(s);
+    setEnd(e);
+    syncInputs(s, e);
+    setDistance(road.distance_m);
+    setEditingId(road.id);
+    setSavedRoad(null);
+    setPicking('start');
+    setMessage(`✏️ กำลังแก้ไข: ${road.name}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setName('');
+    setNote('');
+    setStart(null);
+    setEnd(null);
+    setDistance(null);
+    syncInputs(null, null);
+    setPicking('start');
+    setMessage('');
+  }
+
+  function resetAll() {
+    setStart(null);
+    setEnd(null);
+    setDistance(null);
+    setSavedRoad(null);
+    setPicking('start');
+    setMessage('');
+    setEditingId(null);
+    setName('');
+    setNote('');
+    syncInputs(null, null);
+  }
+
+  // หน้าจอโหลดตอนตรวจสอบ auth
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          <p className="mt-3 text-slate-500">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 px-6 py-8 text-white shadow-lg">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        ></div>
-
-        <div className="relative mx-auto max-w-6xl">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        {/* Header */}
+        <header className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg">
+          <div className="flex flex-wrap items-center gap-4">
             <img
               src="/logo.png"
-              alt="โลโก้เทศบาลตำบลท่าวังทอง"
-              className="h-16 w-16 rounded-full bg-white p-1 shadow-lg md:h-20 md:w-20"
+              alt="โลโก้เทศบาล"
+              className="h-16 w-16 rounded-full bg-white p-1 shadow-md"
             />
-            <div>
+            <div className="flex-1 min-w-[200px]">
               <h1 className="text-xl font-bold md:text-2xl">
-                ระบบสารสนเทศข้อมูลถนนท้องถิ่น
+                ระบบจัดการข้อมูลถนนท้องถิ่น
               </h1>
-              <p className="mt-0.5 text-sm font-semibold text-white md:text-base">
+              <p className="mt-0.5 text-sm font-semibold">
                 เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)
               </p>
             </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <a
-              href="#map"
-              className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-blue-700 shadow transition hover:scale-105"
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm transition hover:bg-white/30"
             >
-              🗺️ ดูแผนที่
-            </a>
-            <a
-              href="/admin"
-              className="rounded-full border border-white/60 bg-white/10 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              ⚙️ สำหรับเจ้าหน้าที่
-            </a>
+              🚪 ออกจากระบบ
+            </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 p-6">
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white shadow-md transition hover:shadow-xl">
-            <div className="absolute -right-4 -top-4 text-7xl opacity-20 transition group-hover:scale-110">
-              🛣️
-            </div>
-            <div className="relative">
-              <div className="text-xs opacity-90">จำนวนถนนทั้งหมด</div>
-              <div className="mt-1 text-4xl font-bold">{roads.length}</div>
-              <div className="text-xs opacity-90">สาย</div>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-md transition hover:shadow-xl">
-            <div className="absolute -right-4 -top-4 text-7xl opacity-20 transition group-hover:scale-110">
-              📏
-            </div>
-            <div className="relative">
-              <div className="text-xs opacity-90">ระยะทางรวม</div>
-              <div className="mt-1 text-4xl font-bold">{totalDistance.toFixed(2)}</div>
-              <div className="text-xs opacity-90">กิโลเมตร</div>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-5 text-white shadow-md transition hover:shadow-xl">
-            <div className="absolute -right-4 -top-4 text-7xl opacity-20 transition group-hover:scale-110">
-              🏆
-            </div>
-            <div className="relative">
-              <div className="text-xs opacity-90">ถนนที่ยาวที่สุด</div>
-              <div className="mt-1 truncate text-xl font-bold">
-                {longestRoad?.name ?? '-'}
+        {/* Alert กำลังแก้ไข */}
+        {editingId && (
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-amber-800">
+                  ✏️ กำลังแก้ไขข้อมูล (ID: {editingId})
+                </div>
+                <div className="text-sm text-amber-700">
+                  แก้ไขข้อมูลแล้วกด "บันทึก" หรือกด "ยกเลิก" เพื่อกลับ
+                </div>
               </div>
-              <div className="text-xs opacity-90">
-                {longestRoad?.distance_m
-                  ? `${(longestRoad.distance_m / 1000).toFixed(2)} กม.`
-                  : 'ไม่มีข้อมูล'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="rounded-2xl bg-white p-4 shadow">
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-              🔍
-            </span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อถนน..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-12 pr-10 outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-            {search && (
               <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                onClick={cancelEdit}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
               >
-                ✕
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Grid หลัก */}
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+          {/* ฟอร์ม */}
+          <div className="space-y-4 rounded-2xl bg-white p-6 shadow">
+            <div>
+              <label className="mb-1 block text-sm font-medium">ชื่อถนน</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="เช่น ถนนสุขุมวิท"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">หมายเหตุ</label>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="(ไม่บังคับ)"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* พิกัดเริ่มต้น */}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-emerald-600">
+                  🟢 จุดเริ่มต้น
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPicking('start')}
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    picking === 'start'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  }`}
+                >
+                  เลือกบนแผนที่
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={startLat}
+                  onChange={(e) => setStartLat(e.target.value)}
+                  onBlur={applyStartFromInput}
+                  placeholder="ละติจูด (Lat)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+                <input
+                  value={startLng}
+                  onChange={(e) => setStartLng(e.target.value)}
+                  onBlur={applyStartFromInput}
+                  placeholder="ลองจิจูด (Lng)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* พิกัดสิ้นสุด */}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-red-500">
+                  🔴 จุดสิ้นสุด
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPicking('end')}
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    picking === 'end'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  }`}
+                >
+                  เลือกบนแผนที่
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={endLat}
+                  onChange={(e) => setEndLat(e.target.value)}
+                  onBlur={applyEndFromInput}
+                  placeholder="ละติจูด (Lat)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                />
+                <input
+                  value={endLng}
+                  onChange={(e) => setEndLng(e.target.value)}
+                  onBlur={applyEndFromInput}
+                  placeholder="ลองจิจูด (Lng)"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-slate-50 p-3 text-sm">
+              <div className="flex justify-between">
+                <span>กำลังเลือกบนแผนที่:</span>
+                <span className="font-semibold text-blue-600">
+                  {picking === 'start' ? 'จุดเริ่มต้น' : 'จุดสิ้นสุด'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleCalculate}
+                disabled={loading || !start || !end}
+                className="flex-1 rounded-lg bg-amber-500 px-4 py-2 font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+              >
+                📏 คำนวณระยะทาง
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading || !name || !start || !end}
+                className={`flex-1 rounded-lg px-4 py-2 font-medium text-white disabled:opacity-50 ${
+                  editingId
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {editingId ? '💾 บันทึกการแก้ไข' : '💾 บันทึก'}
+              </button>
+            </div>
+
+            {savedRoad && !editingId && (
+              <button
+                onClick={resetAll}
+                className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                ➕ เพิ่มถนนเส้นใหม่
               </button>
             )}
-          </div>
-          {focusRoad && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
-              <span>📍 กำลังแสดง:</span>
-              <span className="font-semibold">{focusRoad.name}</span>
-              <button
-                onClick={() => setFocusRoad(null)}
-                className="ml-auto text-slate-400 hover:text-slate-700"
-              >
-                ล้างการโฟกัส
-              </button>
-            </div>
-          )}
-        </div>
 
-        {/* Map */}
-        <div id="map" className="rounded-2xl bg-white p-4 shadow">
-          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-700">
-            🗺️ แผนที่เส้นทางทั้งหมด
-          </h2>
-          {loading ? (
-            <div className="flex h-96 items-center justify-center text-slate-400">
-              <div className="text-center">
-                <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                กำลังโหลด...
+            <button
+              onClick={resetAll}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
+            >
+              🔄 ล้างค่า
+            </button>
+
+            {message && (
+              <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
+                {message}
               </div>
-            </div>
-          ) : roads.length === 0 ? (
-            <div className="flex h-96 items-center justify-center text-slate-400">
-              ยังไม่มีข้อมูลถนน
-            </div>
-          ) : (
-            <RoadsMap roads={filtered} focusRoad={focusRoad} />
-          )}
+            )}
+
+            <a
+              href="/"
+              className="block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm hover:bg-slate-50"
+            >
+              🏠 กลับหน้าแรก
+            </a>
+          </div>
+
+          {/* แผนที่ */}
+          <div className="overflow-hidden rounded-2xl shadow lg:h-full lg:min-h-[700px]">
+            <MapPicker
+              start={start}
+              end={end}
+              onPick={handlePick}
+              onDrag={handleDrag}
+              roadName={editingId ? name : savedRoad?.name ?? name}
+              distanceKm={
+                distance
+                  ? distance / 1000
+                  : savedRoad?.distance
+                    ? savedRoad.distance / 1000
+                    : null
+              }
+              fullHeight
+            />
+          </div>
         </div>
 
-        {/* Table */}
+        {/* ตารางรายการถนน */}
         <div className="overflow-hidden rounded-2xl bg-white shadow">
           <div className="flex items-center justify-between border-b border-slate-200 p-4">
             <div>
               <h2 className="text-lg font-semibold text-slate-700">
-                📋 รายการถนน
+                📋 รายการถนนที่บันทึกแล้ว
               </h2>
               <p className="text-sm text-slate-500">
-                พบ {filtered.length} รายการ • คลิกเพื่อดูรายละเอียด
+                ทั้งหมด {roads.length} รายการ
               </p>
             </div>
           </div>
 
-          {filtered.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">ไม่พบข้อมูล</div>
+          {loadingList ? (
+            <div className="p-10 text-center text-slate-400">กำลังโหลด...</div>
+          ) : roads.length === 0 ? (
+            <div className="p-10 text-center text-slate-400">
+              ยังไม่มีข้อมูล — เพิ่มถนนเส้นแรกเลย!
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -211,144 +511,69 @@ export default function HomePage() {
                     <th className="px-4 py-3 text-left">หมายเหตุ</th>
                     <th className="px-4 py-3 text-right">ระยะทาง</th>
                     <th className="px-4 py-3 text-right">วันที่</th>
+                    <th className="px-4 py-3 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((road, i) => {
-                    const isFocused = focusRoad?.id === road.id;
-                    return (
-                      <tr
-                        key={road.id}
-                        onClick={() => {
-                          setFocusRoad(road);
-                          setSelectedRoad(road);
-                        }}
-                        className={`cursor-pointer border-b border-slate-100 transition ${
-                          isFocused ? 'bg-blue-50' : 'hover:bg-blue-50'
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-slate-400">{i + 1}</td>
-                        <td className="px-4 py-3 font-medium text-slate-800">
-                          {road.name}
-                          {isFocused && (
-                            <span className="ml-2 text-xs text-blue-600">📍</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">
-                          {road.note || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono text-slate-700">
-                          {road.distance_m != null
-                            ? `${(road.distance_m / 1000).toFixed(3)} กม.`
-                            : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-500">
-                          {new Date(road.created_at).toLocaleDateString('th-TH', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: '2-digit',
-                          })}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {roads.map((road, i) => (
+                    <tr
+                      key={road.id}
+                      className={`border-b border-slate-100 ${
+                        editingId === road.id
+                          ? 'bg-amber-50'
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-slate-400">{i + 1}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800">
+                        {road.name}
+                        {editingId === road.id && (
+                          <span className="ml-2 rounded bg-amber-200 px-2 py-0.5 text-xs text-amber-800">
+                            กำลังแก้ไข
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {road.note || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-slate-700">
+                        {road.distance_m != null
+                          ? `${(road.distance_m / 1000).toFixed(3)} กม.`
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">
+                        {new Date(road.created_at).toLocaleDateString('th-TH', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: '2-digit',
+                        })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center gap-1">
+                          <button
+                            onClick={() => handleEdit(road)}
+                            disabled={loading}
+                            className="rounded-lg bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                          >
+                            ✏️ แก้ไข
+                          </button>
+                          <button
+                            onClick={() => handleDelete(road.id, road.name)}
+                            disabled={loading}
+                            className="rounded-lg bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                          >
+                            🗑️ ลบ
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <footer className="pb-10 pt-6 text-center text-sm text-slate-400">
-          <p>
-            © {new Date().getFullYear()} เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา
-            จังหวัดพะเยา (พย.11)
-          </p>
-          <p className="mt-1 text-xs">Powered by Next.js • Supabase • Vercel</p>
-        </footer>
-      </main>
-
-      {/* Modal รายละเอียดถนน */}
-      {selectedRoad && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={() => setSelectedRoad(null)}
-        >
-          <div
-            className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
-              <h3 className="text-lg font-bold">🛣️ {selectedRoad.name}</h3>
-              <button
-                onClick={() => setSelectedRoad(null)}
-                className="rounded-full bg-white/20 p-1.5 hover:bg-white/30"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-3 p-5 text-slate-700">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">ระยะทาง</div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {selectedRoad.distance_m
-                      ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
-                      : '-'}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">วันที่บันทึก</div>
-                  <div className="text-lg font-bold">
-                    {new Date(selectedRoad.created_at).toLocaleDateString('th-TH')}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-slate-100 p-3">
-                <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
-                <div className="font-mono text-sm">
-                  🟢 {selectedRoad.start_lat.toFixed(6)}, {selectedRoad.start_lng.toFixed(6)}
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-slate-100 p-3">
-                <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
-                <div className="font-mono text-sm">
-                  🔴 {selectedRoad.end_lat.toFixed(6)}, {selectedRoad.end_lng.toFixed(6)}
-                </div>
-              </div>
-
-              {selectedRoad.note && (
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">หมายเหตุ</div>
-                  <div>{selectedRoad.note}</div>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-center font-medium text-white transition hover:bg-blue-700"
-                >
-                  🧭 นำทางด้วย Google Maps
-                </a>
-                <button
-                  onClick={() => {
-                    setFocusRoad(selectedRoad);
-                    setSelectedRoad(null);
-                  }}
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 font-medium transition hover:bg-slate-100"
-                >
-                  🗺️ ดูบนแผนที่
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

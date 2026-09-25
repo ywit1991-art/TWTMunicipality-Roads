@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getRoadDistance, LatLng } from '@/lib/osrm';
 
@@ -20,6 +21,9 @@ type Road = {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
   const [start, setStart] = useState<LatLng | null>(null);
@@ -39,6 +43,20 @@ export default function AdminPage() {
   const [roads, setRoads] = useState<Road[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
+  // ตรวจสอบ login + โหลดข้อมูล
+  useEffect(() => {
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.push('/login');
+        return;
+      }
+      setCheckingAuth(false);
+      loadRoads();
+    }
+    init();
+  }, [router]);
+
   async function loadRoads() {
     setLoadingList(true);
     const { data, error } = await supabase
@@ -49,9 +67,11 @@ export default function AdminPage() {
     setLoadingList(false);
   }
 
-  useEffect(() => {
-    loadRoads();
-  }, []);
+  async function handleLogout() {
+    if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   function syncInputs(s: LatLng | null, e: LatLng | null) {
     setStartLat(s ? String(s.lat) : '');
@@ -224,18 +244,30 @@ export default function AdminPage() {
     syncInputs(null, null);
   }
 
+  // หน้าจอโหลดตอนตรวจสอบ auth
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          <p className="mt-3 text-slate-500">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+      <div className="mx-auto max-w-[1600px] space-y-6">
         {/* Header */}
         <header className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <img
               src="/logo.png"
               alt="โลโก้เทศบาล"
               className="h-16 w-16 rounded-full bg-white p-1 shadow-md"
             />
-            <div>
+            <div className="flex-1 min-w-[200px]">
               <h1 className="text-xl font-bold md:text-2xl">
                 ระบบจัดการข้อมูลถนนท้องถิ่น
               </h1>
@@ -243,6 +275,12 @@ export default function AdminPage() {
                 เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-medium backdrop-blur-sm transition hover:bg-white/30"
+            >
+              🚪 ออกจากระบบ
+            </button>
           </div>
         </header>
 
@@ -268,8 +306,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Grid หลัก — ปรับให้สูงเท่ากัน + แผนที่ขยายเต็ม */}
-        <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
+        {/* Grid หลัก */}
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
           {/* ฟอร์ม */}
           <div className="space-y-4 rounded-2xl bg-white p-6 shadow">
             <div>
@@ -424,8 +462,8 @@ export default function AdminPage() {
             </a>
           </div>
 
-          {/* แผนที่ — ขยายเต็มความสูงของ grid */}
-          <div className="overflow-hidden rounded-2xl shadow md:h-full md:min-h-[600px]">
+          {/* แผนที่ */}
+          <div className="overflow-hidden rounded-2xl shadow lg:h-full lg:min-h-[700px]">
             <MapPicker
               start={start}
               end={end}
