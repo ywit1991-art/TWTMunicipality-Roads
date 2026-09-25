@@ -44,7 +44,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Section — เล็กลง */}
+      {/* Hero Section */}
       <header className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 px-6 py-8 text-white shadow-lg">
         <div
           className="absolute inset-0 opacity-10"
@@ -54,14 +54,18 @@ export default function HomePage() {
         ></div>
 
         <div className="relative mx-auto max-w-6xl">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🛣️</span>
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo.png"
+              alt="โลโก้เทศบาลตำบลท่าวังทอง"
+              className="h-16 w-16 rounded-full bg-white p-1 shadow-lg md:h-20 md:w-20"
+            />
             <div>
-              <h1 className="text-2xl font-bold md:text-3xl">
-                ระบบสารสนเทศถนน
+              <h1 className="text-xl font-bold md:text-2xl">
+                ระบบสารสนเทศข้อมูลถนนท้องถิ่น
               </h1>
-              <p className="text-sm text-blue-100">
-                ข้อมูลถนนในเขตเทศบาล พร้อมพิกัด GPS และระยะทางตามจริง
+              <p className="mt-0.5 text-sm font-semibold text-white md:text-base">
+                เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา จังหวัดพะเยา (พย.11)
               </p>
             </div>
           </div>
@@ -220,9 +224,7 @@ export default function HomePage() {
                           setSelectedRoad(road);
                         }}
                         className={`cursor-pointer border-b border-slate-100 transition ${
-                          isFocused
-                            ? 'bg-blue-50'
-                            : 'hover:bg-blue-50'
+                          isFocused ? 'bg-blue-50' : 'hover:bg-blue-50'
                         }`}
                       >
                         <td className="px-4 py-3 text-slate-400">{i + 1}</td>
@@ -258,7 +260,10 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="pb-10 pt-6 text-center text-sm text-slate-400">
-          <p>© {new Date().getFullYear()} ระบบสารสนเทศถนน • เทศบาล</p>
+          <p>
+            © {new Date().getFullYear()} เทศบาลตำบลท่าวังทอง อำเภอเมืองพะเยา
+            จังหวัดพะเยา (พย.11)
+          </p>
           <p className="mt-1 text-xs">Powered by Next.js • Supabase • Vercel</p>
         </footer>
       </main>
