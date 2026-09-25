@@ -79,7 +79,7 @@ export default function MapPicker({
 
   return (
     <MapContainer
-      center={[13.7563, 100.5018]}
+      center={[19.1907, 99.9315]}
       zoom={12}
       style={{ height: '450px', width: '100%', borderRadius: '12px' }}
     >
