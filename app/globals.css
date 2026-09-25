@@ -4,3 +4,61 @@ html,
 body {
   font-family: var(--font-noto-thai), 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
 }
+
+/* ============================================
+   Leaflet Tooltip — ปรับให้สวย ไม่มีกรอบดำ
+   ============================================ */
+.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+  border: none !important;
+}
+
+/* ============================================
+   ลบเส้นขอบดำเมื่อคลิกที่แผนที่ / เส้นถนน
+   ============================================ */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-interactive {
+  outline: none !important;
+}
+
+.leaflet-interactive:focus,
+.leaflet-interactive:active,
+.leaflet-container svg,
+.leaflet-container path {
+  outline: none !important;
+  border: none !important;
+}
+
+/* ปุ่มซูม +/- ของ Leaflet */
+.leaflet-control-zoom a {
+  outline: none !important;
+}
+
+.leaflet-control-zoom a:focus,
+.leaflet-control-zoom a:active {
+  outline: none !important;
+}
+
+/* ปุ่ม / ลิงก์ในแผนที่ */
+.leaflet-container a {
+  outline: none !important;
+}
+
+/* Attribution มุมขวาล่าง */
+.leaflet-control-attribution {
+  outline: none !important;
+}
+
+.leaflet-control-attribution a {
+  outline: none !important;
+}
