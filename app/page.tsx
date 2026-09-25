@@ -197,7 +197,7 @@ export default function HomePage() {
                 onRoadClick={(road) => setSelectedRoad(road)}
               />
 
-              {/* Popup — ลอยมุมขวาในกรอบแผนที่ */}
+              {/* Popup */}
               {selectedRoad && (
                 <div className="absolute right-3 top-3 z-[1000] w-[320px] max-w-[calc(100%-24px)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 md:w-[360px]">
                   <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-3 text-white">
@@ -223,11 +223,20 @@ export default function HomePage() {
                         </div>
                       </div>
                       <div className="rounded-lg bg-slate-100 p-2.5">
-                        <div className="text-[10px] text-slate-500">วันที่</div>
+                        <div className="text-[10px] text-slate-500">
+                          วันที่ตรวจรับพัสดุ
+                        </div>
                         <div className="text-xs font-bold">
-                          {new Date(selectedRoad.created_at).toLocaleDateString(
-                            'th-TH'
-                          )}
+                          {selectedRoad.received_date
+                            ? new Date(selectedRoad.received_date).toLocaleDateString(
+                                'th-TH',
+                                {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                }
+                              )
+                            : '-'}
                         </div>
                       </div>
                     </div>

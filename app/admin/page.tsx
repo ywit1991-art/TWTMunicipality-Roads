@@ -17,6 +17,7 @@ type Road = {
   end_lat: number;
   end_lng: number;
   distance_m: number | null;
+  received_date: string | null;
   created_at: string;
 };
 
@@ -27,6 +28,7 @@ export default function AdminPage() {
 
   const [name, setName] = useState('');
   const [note, setNote] = useState('');
+  const [receivedDate, setReceivedDate] = useState('');
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
   const [picking, setPicking] = useState<'start' | 'end'>('start');
@@ -44,7 +46,6 @@ export default function AdminPage() {
   const [roads, setRoads] = useState<Road[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
-  // ตรวจสอบ login ด้วย localStorage
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
@@ -156,6 +157,7 @@ export default function AdminPage() {
       const payload = {
         name,
         note,
+        received_date: receivedDate || null,
         start_lat: start.lat,
         start_lng: start.lng,
         end_lat: end.lat,
@@ -180,6 +182,7 @@ export default function AdminPage() {
 
       setName('');
       setNote('');
+      setReceivedDate('');
       setPicking('start');
       setStart(null);
       setEnd(null);
@@ -213,6 +216,7 @@ export default function AdminPage() {
     const e = { lat: road.end_lat, lng: road.end_lng };
     setName(road.name);
     setNote(road.note ?? '');
+    setReceivedDate(road.received_date ?? '');
     setStart(s);
     setEnd(e);
     syncInputs(s, e);
@@ -228,6 +232,7 @@ export default function AdminPage() {
     setEditingId(null);
     setName('');
     setNote('');
+    setReceivedDate('');
     setStart(null);
     setEnd(null);
     setDistance(null);
@@ -246,10 +251,19 @@ export default function AdminPage() {
     setEditingId(null);
     setName('');
     setNote('');
+    setReceivedDate('');
     syncInputs(null, null);
   }
 
-  // หน้าจอโหลดตอนตรวจสอบ auth
+  function formatDate(dateStr: string | null) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('th-TH', {
+      day: '2-digit',
+      month: 'short',
+      year: '2-digit',
+    });
+  }
+
   if (checkingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -326,6 +340,21 @@ export default function AdminPage() {
                 placeholder="เช่น ถนนสุขุมวิท"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                วันที่ตรวจรับพัสดุ
+              </label>
+              <input
+                type="date"
+                value={receivedDate}
+                onChange={(e) => setReceivedDate(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-500"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                เลือกวันที่จากปฏิทิน หรือพิมพ์เอง
+              </p>
             </div>
 
             <div>
@@ -516,9 +545,9 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>
                     <th className="px-4 py-3 text-left">ชื่อถนน</th>
+                    <th className="px-4 py-3 text-left">วันที่ตรวจรับ</th>
                     <th className="px-4 py-3 text-left">หมายเหตุ</th>
                     <th className="px-4 py-3 text-right">ระยะทาง</th>
-                    <th className="px-4 py-3 text-right">วันที่</th>
                     <th className="px-4 py-3 text-center">จัดการ</th>
                   </tr>
                 </thead>
@@ -541,6 +570,9 @@ export default function AdminPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {formatDate(road.received_date)}
+                      </td>
                       <td className="px-4 py-3 text-slate-500">
                         {road.note || '-'}
                       </td>
@@ -548,13 +580,6 @@ export default function AdminPage() {
                         {road.distance_m != null
                           ? `${(road.distance_m / 1000).toFixed(3)} กม.`
                           : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-500">
-                        {new Date(road.created_at).toLocaleDateString('th-TH', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: '2-digit',
-                        })}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-center gap-1">

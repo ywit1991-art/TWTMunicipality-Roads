@@ -20,6 +20,7 @@ export type Road = {
   end_lat: number;
   end_lng: number;
   distance_m: number | null;
+  received_date: string | null;
   created_at: string;
 };
 
