@@ -1,4 +1,5 @@
 'use client';
+
 import {
   MapContainer,
   TileLayer,
@@ -144,18 +145,29 @@ export default function RoadsMap({
                   },
                 }}
               >
-                <Tooltip sticky>
+                <Tooltip
+                  sticky
+                  direction="top"
+                  offset={[0, -10]}
+                  opacity={1}
+                  className="road-tooltip"
+                >
                   <div
                     style={{
                       fontFamily: "'Noto Sans Thai', sans-serif",
                       fontWeight: 600,
                       fontSize: '13px',
-                      color: '#1e293b',
+                      color: '#ffffff',
+                      backgroundColor: color,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                     }}
                   >
                     🛣️ {road.name}
                     {road.distance_m != null && (
-                      <span style={{ marginLeft: 6, color: '#64748b' }}>
+                      <span style={{ marginLeft: 6, opacity: 0.9 }}>
                         • {(road.distance_m / 1000).toFixed(3)} กม.
                       </span>
                     )}
