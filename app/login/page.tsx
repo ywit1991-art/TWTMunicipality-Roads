@@ -48,8 +48,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-700 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center text-white">
           <img
