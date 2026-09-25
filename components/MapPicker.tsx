@@ -54,6 +54,7 @@ export default function MapPicker({
   onDrag,
   roadName,
   distanceKm,
+  fullHeight,
 }: {
   start: LatLng | null;
   end: LatLng | null;
@@ -61,6 +62,7 @@ export default function MapPicker({
   onDrag?: (which: 'start' | 'end', p: LatLng) => void;
   roadName?: string;
   distanceKm?: number | null;
+  fullHeight?: boolean;
 }) {
   const [route, setRoute] = useState<[number, number][]>([]);
 
@@ -73,15 +75,19 @@ export default function MapPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [start?.lat, start?.lng, end?.lat, end?.lng]);
 
-  // จุดกลางเส้นทาง (ไว้แสดง label)
   const midPoint: [number, number] | null =
     route.length > 0 ? route[Math.floor(route.length / 2)] : null;
 
   return (
     <MapContainer
       center={[19.1907, 99.9315]}
-      zoom={12}
-      style={{ height: '450px', width: '100%', borderRadius: '12px' }}
+      zoom={13}
+      style={{
+        height: fullHeight ? '100%' : '450px',
+        minHeight: fullHeight ? '600px' : '450px',
+        width: '100%',
+        borderRadius: '12px',
+      }}
     >
       <TileLayer
         attribution='&copy; OpenStreetMap'
@@ -97,7 +103,7 @@ export default function MapPicker({
         />
       )}
 
-      {/* Label กลางเส้น: ชื่อถนน + ระยะทาง (สีเหลืองดำ เด่นชัด) */}
+      {/* Label กลางเส้น: ชื่อถนน + ระยะทาง */}
       {midPoint && roadName && distanceKm != null && (
         <Marker
           position={midPoint}

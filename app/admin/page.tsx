@@ -31,13 +31,11 @@ export default function AdminPage() {
   const [savedRoad, setSavedRoad] = useState<{ name: string; distance: number } | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // input พิกัด
   const [startLat, setStartLat] = useState('');
   const [startLng, setStartLng] = useState('');
   const [endLat, setEndLat] = useState('');
   const [endLng, setEndLng] = useState('');
 
-  // รายการถนนทั้งหมด
   const [roads, setRoads] = useState<Road[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -90,7 +88,6 @@ export default function AdminPage() {
     setMessage('');
   }
 
-  // เมื่อผู้ใช้พิมพ์พิกัด → อัปเดต marker
   function applyStartFromInput() {
     const lat = parseFloat(startLat);
     const lng = parseFloat(startLng);
@@ -230,7 +227,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-5xl space-y-6">
-        {/* Header — ไม่มีคำอธิบายแล้ว */}
+        {/* Header */}
         <header className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg">
           <div className="flex items-center gap-4">
             <img
@@ -271,7 +268,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Grid หลัก — ปรับให้สูงเท่ากัน + แผนที่ขยายเต็ม */}
+        <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
           {/* ฟอร์ม */}
           <div className="space-y-4 rounded-2xl bg-white p-6 shadow">
             <div>
@@ -426,8 +424,8 @@ export default function AdminPage() {
             </a>
           </div>
 
-          {/* แผนที่ */}
-          <div className="overflow-hidden rounded-2xl shadow">
+          {/* แผนที่ — ขยายเต็มความสูงของ grid */}
+          <div className="overflow-hidden rounded-2xl shadow md:h-full md:min-h-[600px]">
             <MapPicker
               start={start}
               end={end}
@@ -441,6 +439,7 @@ export default function AdminPage() {
                     ? savedRoad.distance / 1000
                     : null
               }
+              fullHeight
             />
           </div>
         </div>
