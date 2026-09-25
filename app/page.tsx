@@ -222,10 +222,7 @@ export default function HomePage() {
                     return (
                       <tr
                         key={road.id}
-                        onClick={() => {
-                          // ⭐ เปิด popup อย่างเดียว ไม่บังคับแผนที่ให้บิน
-                          setSelectedRoad(road);
-                        }}
+                        onClick={() => setSelectedRoad(road)}
                         className={`cursor-pointer border-b border-slate-100 transition ${
                           isSelected ? 'bg-blue-100' : 'hover:bg-blue-50'
                         }`}
@@ -268,92 +265,87 @@ export default function HomePage() {
         </footer>
       </main>
 
-      {/* Popup รายละเอียดถนน */}
+      {/* Popup รายละเอียด — มุมล่างขวา ไม่ทับแผนที่ */}
       {selectedRoad && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={() => setSelectedRoad(null)}
-        >
-          <div
-            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
-              <h3 className="text-lg font-bold">🛣️ {selectedRoad.name}</h3>
-              <button
-                onClick={() => setSelectedRoad(null)}
-                className="rounded-full bg-white/20 p-1.5 hover:bg-white/30"
-              >
-                ✕
-              </button>
+        <div className="fixed bottom-4 right-4 z-50 w-[340px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 md:w-[380px]">
+          {/* Header */}
+          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-3 text-white">
+            <h3 className="truncate text-base font-bold">
+              🛣️ {selectedRoad.name}
+            </h3>
+            <button
+              onClick={() => setSelectedRoad(null)}
+              className="rounded-full bg-white/20 p-1 text-sm hover:bg-white/30"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="space-y-2 p-4 text-slate-700">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-slate-100 p-2.5">
+                <div className="text-xs text-slate-500">ระยะทาง</div>
+                <div className="text-base font-bold text-blue-600">
+                  {selectedRoad.distance_m
+                    ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
+                    : '-'}
+                </div>
+              </div>
+              <div className="rounded-lg bg-slate-100 p-2.5">
+                <div className="text-xs text-slate-500">วันที่</div>
+                <div className="text-sm font-bold">
+                  {new Date(selectedRoad.created_at).toLocaleDateString('th-TH')}
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3 p-5 text-slate-700">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">ระยะทาง</div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {selectedRoad.distance_m
-                      ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
-                      : '-'}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">วันที่บันทึก</div>
-                  <div className="text-sm font-bold">
-                    {new Date(selectedRoad.created_at).toLocaleDateString('th-TH')}
-                  </div>
-                </div>
+            <div className="rounded-lg bg-slate-100 p-2.5">
+              <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
+              <div className="font-mono text-xs">
+                🟢 {selectedRoad.start_lat.toFixed(6)},{' '}
+                {selectedRoad.start_lng.toFixed(6)}
               </div>
+            </div>
 
-              <div className="rounded-lg bg-slate-100 p-3">
-                <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
-                <div className="font-mono text-xs">
-                  🟢 {selectedRoad.start_lat.toFixed(6)},{' '}
-                  {selectedRoad.start_lng.toFixed(6)}
-                </div>
+            <div className="rounded-lg bg-slate-100 p-2.5">
+              <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
+              <div className="font-mono text-xs">
+                🔴 {selectedRoad.end_lat.toFixed(6)},{' '}
+                {selectedRoad.end_lng.toFixed(6)}
               </div>
+            </div>
 
-              <div className="rounded-lg bg-slate-100 p-3">
-                <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
-                <div className="font-mono text-xs">
-                  🔴 {selectedRoad.end_lat.toFixed(6)},{' '}
-                  {selectedRoad.end_lng.toFixed(6)}
-                </div>
+            {selectedRoad.note && (
+              <div className="rounded-lg bg-slate-100 p-2.5">
+                <div className="text-xs text-slate-500">หมายเหตุ</div>
+                <div className="text-sm">{selectedRoad.note}</div>
               </div>
+            )}
 
-              {selectedRoad.note && (
-                <div className="rounded-lg bg-slate-100 p-3">
-                  <div className="text-xs text-slate-500">หมายเหตุ</div>
-                  <div className="text-sm">{selectedRoad.note}</div>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-blue-700"
-                >
-                  🧭 นำทางด้วย Google Maps
-                </a>
-                <button
-                  onClick={() => {
-                    setFocusRoad(selectedRoad);
-                    setSelectedRoad(null);
-                    // เลื่อนไปดูแผนที่ด้านบน
-                    setTimeout(() => {
-                      document
-                        .getElementById('map')
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                  }}
-                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium transition hover:bg-slate-100"
-                >
-                  🗺️ ดูบนแผนที่
-                </button>
-              </div>
+            <div className="flex gap-2 pt-1">
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white transition hover:bg-blue-700"
+              >
+                🧭 Google Maps
+              </a>
+              <button
+                onClick={() => {
+                  setFocusRoad(selectedRoad);
+                  setSelectedRoad(null);
+                  setTimeout(() => {
+                    document
+                      .getElementById('map')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium transition hover:bg-slate-100"
+              >
+                🗺️ ดูแผนที่
+              </button>
             </div>
           </div>
         </div>
