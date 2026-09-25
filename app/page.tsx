@@ -168,12 +168,11 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Map + Detail Panel (วางเคียงคู่) */}
+        {/* Map — เต็มพื้นที่ */}
         <div id="map" className="rounded-2xl bg-white p-4 shadow">
           <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-slate-700">
             🗺️ แผนที่เส้นทางทั้งหมด
           </h2>
-
           {loading ? (
             <div className="flex h-96 items-center justify-center text-slate-400">
               <div className="text-center">
@@ -186,100 +185,7 @@ export default function HomePage() {
               ยังไม่มีข้อมูลถนน
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-3">
-              {/* แผนที่ */}
-              <div className="lg:col-span-2">
-                <RoadsMap roads={filtered} focusRoad={focusRoad} />
-              </div>
-
-              {/* Panel รายละเอียด (ด้านขวา) */}
-              <div className="lg:col-span-1">
-                {selectedRoad ? (
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 shadow">
-                    <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
-                      <h3 className="text-base font-bold">🛣️ {selectedRoad.name}</h3>
-                      <button
-                        onClick={() => setSelectedRoad(null)}
-                        className="rounded-full bg-white/20 p-1 text-sm hover:bg-white/30"
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 p-4 text-slate-700">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg bg-slate-100 p-3">
-                          <div className="text-xs text-slate-500">ระยะทาง</div>
-                          <div className="text-lg font-bold text-blue-600">
-                            {selectedRoad.distance_m
-                              ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
-                              : '-'}
-                          </div>
-                        </div>
-                        <div className="rounded-lg bg-slate-100 p-3">
-                          <div className="text-xs text-slate-500">วันที่</div>
-                          <div className="text-sm font-bold">
-                            {new Date(selectedRoad.created_at).toLocaleDateString(
-                              'th-TH'
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg bg-slate-100 p-3">
-                        <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
-                        <div className="font-mono text-xs">
-                          🟢 {selectedRoad.start_lat.toFixed(6)},{' '}
-                          {selectedRoad.start_lng.toFixed(6)}
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg bg-slate-100 p-3">
-                        <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
-                        <div className="font-mono text-xs">
-                          🔴 {selectedRoad.end_lat.toFixed(6)},{' '}
-                          {selectedRoad.end_lng.toFixed(6)}
-                        </div>
-                      </div>
-
-                      {selectedRoad.note && (
-                        <div className="rounded-lg bg-slate-100 p-3">
-                          <div className="text-xs text-slate-500">หมายเหตุ</div>
-                          <div className="text-sm">{selectedRoad.note}</div>
-                        </div>
-                      )}
-
-                      <div className="space-y-2 pt-2">
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-blue-700"
-                        >
-                          🧭 นำทางด้วย Google Maps
-                        </a>
-                        <button
-                          onClick={() => {
-                            setFocusRoad(selectedRoad);
-                          }}
-                          className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium transition hover:bg-slate-100"
-                        >
-                          🗺️ ดูบนแผนที่
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex h-full min-h-[400px] items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-400">
-                    <div>
-                      <div className="text-4xl">👈</div>
-                      <p className="mt-2">คลิกที่แถวในตาราง</p>
-                      <p className="text-xs">เพื่อดูรายละเอียดถนน</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <RoadsMap roads={filtered} focusRoad={focusRoad} />
           )}
         </div>
 
@@ -313,7 +219,6 @@ export default function HomePage() {
                 <tbody>
                   {filtered.map((road, i) => {
                     const isFocused = focusRoad?.id === road.id;
-                    const isSelected = selectedRoad?.id === road.id;
                     return (
                       <tr
                         key={road.id}
@@ -322,11 +227,7 @@ export default function HomePage() {
                           setSelectedRoad(road);
                         }}
                         className={`cursor-pointer border-b border-slate-100 transition ${
-                          isSelected
-                            ? 'bg-blue-100'
-                            : isFocused
-                              ? 'bg-blue-50'
-                              : 'hover:bg-blue-50'
+                          isFocused ? 'bg-blue-50' : 'hover:bg-blue-50'
                         }`}
                       >
                         <td className="px-4 py-3 text-slate-400">{i + 1}</td>
@@ -369,6 +270,93 @@ export default function HomePage() {
           <p className="mt-1 text-xs">Powered by Next.js • Supabase • Vercel</p>
         </footer>
       </main>
+
+      {/* Popup รายละเอียดถนน — เด้งทับกลางจอ */}
+      {selectedRoad && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedRoad(null)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+              <h3 className="text-lg font-bold">🛣️ {selectedRoad.name}</h3>
+              <button
+                onClick={() => setSelectedRoad(null)}
+                className="rounded-full bg-white/20 p-1.5 hover:bg-white/30"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-3 p-5 text-slate-700">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-slate-100 p-3">
+                  <div className="text-xs text-slate-500">ระยะทาง</div>
+                  <div className="text-lg font-bold text-blue-600">
+                    {selectedRoad.distance_m
+                      ? `${(selectedRoad.distance_m / 1000).toFixed(3)} กม.`
+                      : '-'}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-100 p-3">
+                  <div className="text-xs text-slate-500">วันที่บันทึก</div>
+                  <div className="text-sm font-bold">
+                    {new Date(selectedRoad.created_at).toLocaleDateString('th-TH')}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-slate-100 p-3">
+                <div className="text-xs text-slate-500">พิกัดเริ่มต้น</div>
+                <div className="font-mono text-xs">
+                  🟢 {selectedRoad.start_lat.toFixed(6)},{' '}
+                  {selectedRoad.start_lng.toFixed(6)}
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-slate-100 p-3">
+                <div className="text-xs text-slate-500">พิกัดสิ้นสุด</div>
+                <div className="font-mono text-xs">
+                  🔴 {selectedRoad.end_lat.toFixed(6)},{' '}
+                  {selectedRoad.end_lng.toFixed(6)}
+                </div>
+              </div>
+
+              {selectedRoad.note && (
+                <div className="rounded-lg bg-slate-100 p-3">
+                  <div className="text-xs text-slate-500">หมายเหตุ</div>
+                  <div className="text-sm">{selectedRoad.note}</div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${selectedRoad.start_lat},${selectedRoad.start_lng}&destination=${selectedRoad.end_lat},${selectedRoad.end_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-blue-700"
+                >
+                  🧭 นำทางด้วย Google Maps
+                </a>
+                <button
+                  onClick={() => {
+                    setFocusRoad(selectedRoad);
+                    setSelectedRoad(null);
+                  }}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium transition hover:bg-slate-100"
+                >
+                  🗺️ ดูบนแผนที่
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
