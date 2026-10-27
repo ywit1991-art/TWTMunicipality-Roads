@@ -7,6 +7,7 @@ import {
   Popup,
   Polyline,
   useMapEvents,
+  useMap,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -28,6 +29,17 @@ function ClickHandler({ onPick }: { onPick: (p: LatLng) => void }) {
       onPick({ lat: e.latlng.lat, lng: e.latlng.lng });
     },
   });
+  return null;
+}
+
+// ⭐ คอมโพเนนต์สำหรับบังคับให้แผนที่วิ่งไปหาพิกัดที่เปลี่ยน
+function MapController({ center }: { center: LatLng | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo([center.lat, center.lng], 17, { animate: true, duration: 1.5 });
+    }
+  }, [center, map]);
   return null;
 }
 
@@ -109,6 +121,9 @@ export default function MapPicker({
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
   };
 
+  // ⭐ หาจุดล่าสุดที่ถูกปัก เพื่อให้แผนที่วิ่งไปหา
+  const latestPoint = end || start;
+
   return (
     <div className="relative w-full h-full">
       <button
@@ -122,19 +137,22 @@ export default function MapPicker({
 
       <MapContainer
         center={[19.1907, 99.9315]}
-        zoom={17}         
+        zoom={16}
         minZoom={13}
-        maxZoom={20}       /* อนุญาตให้ซูมลึกถึง 20 */
+        maxZoom={20}
         maxBounds={bounds}
         maxBoundsViscosity={1.0}
         style={{ height: fullHeight ? '100%' : '450px', minHeight: '400px', width: '100%', borderRadius: '12px' }}
       >
         <TileLayer 
-          attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerographics, IGN, IGP, UPR-EGP, and the GIS User Community' 
+          attribution='Tiles &copy; Esri' 
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
-          maxNativeZoom={18}  /* ⭐ บอกว่าภาพจริงมีแค่ 18 */
-          maxZoom={20}        /* ⭐ แต่ให้ขยายภาพ 18 ขึ้นไปถึง 20 ได้ */
+          maxNativeZoom={18}
+          maxZoom={20}
         />
+        
+        {/* ⭐ เรียกใช้ MapController เพื่อบังคับให้แผนที่วิ่งตามจุดที่ปัก */}
+        <MapController center={latestPoint} />
         
         <ClickHandler onPick={onPick} />
 
@@ -154,14 +172,7 @@ export default function MapPicker({
                 <div style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', fontSize: '14px' }}>
                   {mode === 'single' ? '📍 ตำแหน่งที่ตั้ง' : '🟢 จุดเริ่มต้น'}
                 </div>
-                <a 
-                  href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${start.lat},${start.lng}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={btnStyle}
-                >
-                  🌍 ดู Street View
-                </a>
+                <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${start.lat},${start.lng}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 ดู Street View</a>
               </div>
             </Popup>
           </Marker>
@@ -179,14 +190,7 @@ export default function MapPicker({
                 <div style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', fontSize: '14px' }}>
                   🔴 จุดสิ้นสุด
                 </div>
-                <a 
-                  href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${end.lat},${end.lng}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={btnStyle}
-                >
-                  🌍 ดู Street View
-                </a>
+                <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${end.lat},${end.lng}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 ดู Street View</a>
               </div>
             </Popup>
           </Marker>

@@ -31,8 +31,10 @@ export default function SurveyPage() {
   const [problem, setProblem] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
+  
+  // ⭐ State สำหรับ Alert Modal
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; type: 'error' | 'success' } | null>(null);
+  const [successModalData, setSuccessModalData] = useState<{ village: string; planName: string } | null>(null);
 
   const isRoadWork = ROAD_WORK_TYPES.includes(planType);
   const isOtherWork = OTHER_WORK_TYPES.includes(planType);
@@ -65,13 +67,22 @@ export default function SurveyPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage('');
-    if (!village || !planName || !planType) return setMessage('❌ กรุณากรอกข้อมูลพื้นฐานให้ครบ');
-    if (isRoadWork && (!start || !end)) return setMessage('❌ กรุณาระบุจุดเริ่มต้นและจุดสิ้นสุดบนแผนที่');
-    if (isOtherWork && !location) return setMessage('❌ กรุณาระบุตำแหน่งบนแผนที่');
-    if (readiness === 'ไม่พร้อม' && !problem.trim()) return setMessage('❌ กรุณาระบุปัญหาที่ไม่พร้อม');
+    
+    if (!village || !planName || !planType) {
+      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณากรอก "หมู่บ้าน", "ชื่อแผน" และ "ประเภทงาน" ให้ครบก่อนครับ', type: 'error' });
+    }
+    if (isRoadWork && (!start || !end)) {
+      return setAlertInfo({ title: 'พิกัดไม่ครบถ้วน', message: 'กรุณาระบุ "จุดเริ่มต้น" และ "จุดสิ้นสุด" บนแผนที่ให้ครบก่อนครับ', type: 'error' });
+    }
+    if (isOtherWork && !location) {
+      return setAlertInfo({ title: 'พิกัดไม่ครบถ้วน', message: 'กรุณาระบุ "ตำแหน่งที่ตั้ง" บนแผนที่ก่อนครับ', type: 'error' });
+    }
+    if (readiness === 'ไม่พร้อม' && !problem.trim()) {
+      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณาระบุ "ปัญหาที่ไม่พร้อม" ด้วยครับ', type: 'error' });
+    }
 
     setLoading(true);
+
     try {
       const payload = {
         village, plan_name: planName, plan_type: planType,
@@ -85,23 +96,24 @@ export default function SurveyPage() {
       };
 
       const { error } = await supabase.from('village_plans').insert(payload);
+      
       if (error) throw error;
 
+      setSuccessModalData({ village, planName });
+      
       setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setLocation(null);
       setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start');
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      
     } catch (err: any) {
-      setMessage('❌ ' + err.message);
+      setAlertInfo({ title: 'เกิดข้อผิดพลาด', message: err.message, type: 'error' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col lg:h-screen lg:overflow-hidden bg-slate-100/50">
+    <div className="flex flex-col min-h-screen bg-slate-100/50 pb-10">
       
-      {/* ⭐ Header ปรับให้ Responsive พอดีมือถือ */}
       <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
@@ -121,23 +133,16 @@ export default function SurveyPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col lg:overflow-hidden p-3 md:p-6">
+      <main className="flex-1 flex flex-col p-3 md:p-6 mt-2 md:mt-0">
         <div className="mx-auto max-w-7xl w-full h-full flex flex-col">
           
-          {(showSuccess || message) && (
-            <div className="mb-3 md:mb-4 flex-shrink-0">
-              {showSuccess && <div className="rounded-xl bg-emerald-50 p-2.5 md:p-3 text-emerald-800 border border-emerald-200 font-bold text-sm shadow-sm flex items-center gap-2 animate-in fade-in"><span className="text-lg md:text-xl">✅</span> บันทึกข้อมูลสำรวจเรียบร้อยแล้ว!</div>}
-              {message && <div className="rounded-xl bg-red-50 p-2.5 md:p-3 text-red-800 border border-red-200 font-bold text-sm shadow-sm flex items-center gap-2 animate-in fade-in"><span className="text-lg md:text-xl">⚠️</span> {message}</div>}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:gap-6 flex-1 lg:h-full lg:overflow-hidden min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:gap-6 flex-1">
             
-            <div className="lg:col-span-4 xl:col-span-3 h-full overflow-y-auto custom-scrollbar rounded-3xl bg-white p-4 md:p-6 shadow-sm border border-slate-200">
-              <div className="space-y-4 md:space-y-5 pb-6 md:pb-10">
+            <div className="lg:col-span-4 xl:col-span-3 rounded-3xl bg-white p-4 md:p-6 shadow-sm border border-slate-200">
+              <div className="space-y-4 md:space-y-5 pb-6">
                 <div>
                   <label className="mb-1.5 md:mb-2 block text-sm font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                  <select value={village} onChange={(e) => setVillage(e.target.value)} required className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+                  <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
                     <option value="">-- เลือกหมู่บ้าน --</option>
                     {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
@@ -145,12 +150,12 @@ export default function SurveyPage() {
 
                 <div>
                   <label className="mb-1.5 md:mb-2 block text-sm font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
-                  <input value={planName} onChange={(e) => setPlanName(e.target.value)} required placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                  <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
                 </div>
 
                 <div>
                   <label className="mb-1.5 md:mb-2 block text-sm font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
-                  <select value={planType} onChange={(e) => setPlanType(e.target.value)} required className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+                  <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-3 md:px-4 py-2.5 md:py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
                     <option value="">-- เลือกประเภท --</option>
                     {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -222,7 +227,7 @@ export default function SurveyPage() {
                   )}
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 md:py-4 text-base md:text-lg font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
+                <button type="submit" onClick={handleSubmit} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 md:py-4 text-base md:text-lg font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
                   {loading ? '⏳ กำลังบันทึก...' : '💾 ส่งบันทึกข้อมูล'}
                 </button>
               </div>
@@ -247,21 +252,49 @@ export default function SurveyPage() {
         </div>
       </main>
 
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #94a3b8;
-        }
-      `}</style>
+      {/* ⭐ Custom Alert Modal */}
+      {alertInfo && (
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+            <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full ${alertInfo.type === 'error' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'} shadow-inner`}>
+               {alertInfo.type === 'error' ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+               ) : (
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+               )}
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
+            <p className="text-sm text-slate-500 mb-6">{alertInfo.message}</p>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+              ตกลง
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ Success Modal */}
+      {successModalData && (
+        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-4xl shadow-inner text-emerald-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 mb-2">บันทึกสำเร็จ!</h3>
+            <p className="text-sm text-slate-500 mb-6">ข้อมูลแผนพัฒนาถูกบันทึกลงระบบเรียบร้อยแล้ว</p>
+            <div className="w-full rounded-xl bg-slate-50 p-4 border border-slate-200 mb-6 text-left space-y-1">
+              <div className="text-xs font-bold text-slate-400">หมู่บ้าน</div>
+              <div className="font-bold text-slate-800 mb-2">{successModalData.village}</div>
+              <div className="text-xs font-bold text-slate-400">ชื่อแผน</div>
+              <div className="font-bold text-slate-800 truncate">{successModalData.planName}</div>
+            </div>
+            <button onClick={() => setSuccessModalData(null)} className="w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-white hover:bg-emerald-600 transition shadow-md">
+              ตกลง
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

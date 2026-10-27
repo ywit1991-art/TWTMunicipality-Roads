@@ -23,6 +23,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [editingPlan, setEditingPlan] = useState<VillagePlan | null>(null);
 
+  const [planToDelete, setPlanToDelete] = useState<VillagePlan | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVillage, setFilterVillage] = useState('ทั้งหมด');
   const [filterType, setFilterType] = useState('ทั้งหมด');
@@ -38,6 +40,9 @@ export default function ReportsPage() {
   const [authError, setAuthError] = useState('');
   const [pendingAction, setPendingAction] = useState<{ type: 'edit' | 'delete', plan: VillagePlan } | null>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  // ⭐ State สำหรับ Alert Modal
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; type: 'error' | 'success' } | null>(null);
 
   async function loadData() {
     setLoading(true);
@@ -64,21 +69,52 @@ export default function ReportsPage() {
     setTimeout(() => passwordInputRef.current?.focus(), 100);
   };
 
-  const handleConfirmPassword = () => {
-    if (password === '55555') {
+  const verifyPassword = (inputPass: string) => {
+    if (inputPass === '55555') {
       setIsAuthModalOpen(false);
-      if (pendingAction?.type === 'delete') executeDelete(pendingAction.plan.id);
-      else if (pendingAction?.type === 'edit') executeEdit(pendingAction.plan);
+      if (pendingAction?.type === 'delete') {
+        setPlanToDelete(pendingAction.plan);
+      } else if (pendingAction?.type === 'edit') {
+        executeEdit(pendingAction.plan);
+      }
       setPendingAction(null);
     } else {
-      setAuthError('รหัสผ่านไม่ถูกต้อง'); setPassword(''); passwordInputRef.current?.focus();
+      setAuthError('❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่');
+      setPassword(''); 
+      passwordInputRef.current?.focus();
     }
   };
 
-  async function executeDelete(id: number) {
-    const { error } = await supabase.from('village_plans').delete().eq('id', id);
-    if (error) alert('ลบไม่สำเร็จ: ' + error.message);
-    else loadData();
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPassword(val);
+    setAuthError('');
+    
+    if (val.length === 5) {
+      verifyPassword(val);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      verifyPassword(password);
+    }
+  };
+
+  async function handleConfirmDelete() {
+    if (!planToDelete || !planToDelete.id) return;
+
+    const { error } = await supabase.from('village_plans').delete().eq('id', planToDelete.id);
+
+    if (error) {
+      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
+      setAlertInfo({ title: 'ลบไม่สำเร็จ', message: error.message, type: 'error' });
+    } else {
+      loadData();
+      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
+      setAlertInfo({ title: 'ลบข้อมูลสำเร็จ!', message: 'ข้อมูลแผนพัฒนาถูกลบออกจากระบบแล้ว', type: 'success' });
+    }
+    setPlanToDelete(null);
   }
 
   function executeEdit(plan: VillagePlan) {
@@ -118,8 +154,15 @@ export default function ReportsPage() {
         distance_m: isRoad ? editDistance : null,
       }).eq('id', editingPlan.id);
 
-    if (error) alert('แก้ไขไม่สำเร็จ: ' + error.message);
-    else { alert('✅ แก้ไขสำเร็จ!'); setEditingPlan(null); loadData(); }
+    if (error) {
+      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
+      setAlertInfo({ title: 'แก้ไขไม่สำเร็จ', message: error.message, type: 'error' });
+    } else {
+      setEditingPlan(null);
+      loadData();
+      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
+      setAlertInfo({ title: 'แก้ไขข้อมูลสำเร็จ!', message: 'ข้อมูลแผนพัฒนาถูกอัปเดตเรียบร้อยแล้ว', type: 'success' });
+    }
   }
 
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
@@ -127,7 +170,6 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen pb-10 bg-slate-100/50">
       
-      {/* ⭐ Header หน้ารายงาน (Responsive) */}
       <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
@@ -149,7 +191,6 @@ export default function ReportsPage() {
 
       <main className="mx-auto max-w-7xl mt-4 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-8">
         
-        {/* ค้นหาและตัวกรอง */}
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
           <div className="flex-1 relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
@@ -168,7 +209,6 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {/* Stats Cards (3 ช่องเรียงกัน) */}
         <div className="grid grid-cols-3 gap-2 md:gap-5">
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition hover:shadow-md hover:-translate-y-1">
             <div className="hidden md:block absolute -right-4 -top-4 text-blue-500/10 text-8xl transition group-hover:scale-110 group-hover:rotate-12">📋</div>
@@ -201,7 +241,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Map Section */}
         <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
           <div className="p-3 md:p-4 flex items-center gap-2">
             <span className="text-xl md:text-2xl">🗺️</span>
@@ -218,7 +257,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Table Section (มือถือเป็น Card, คอมเป็น Table) */}
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
@@ -234,7 +272,6 @@ export default function ReportsPage() {
             <div className="p-10 text-center text-slate-400 font-medium">ไม่พบข้อมูล</div>
           ) : (
             <>
-              {/* คอมพิวเตอร์ (Table) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
@@ -280,7 +317,6 @@ export default function ReportsPage() {
                 </table>
               </div>
 
-              {/* มือถือ (Card List) */}
               <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
                 {filteredPlans.map((plan) => (
                   <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -337,18 +373,62 @@ export default function ReportsPage() {
             <input
               ref={passwordInputRef}
               type="password"
+              autoComplete="new-password"
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && handleConfirmPassword()}
+              onChange={handlePasswordChange}
+              onKeyDown={handleKeyDown}
+              onFocus={(e) => e.target.select()}
               placeholder="•••••"
+              maxLength={5}
               className={`w-full rounded-2xl border-2 bg-slate-50 px-4 py-4 text-center text-3xl tracking-[0.5em] outline-none transition-all placeholder:tracking-normal placeholder:text-slate-300 ${authError ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'}`}
             />
             
-            {authError && <p className="mt-2 text-sm font-medium text-red-500 animate-in slide-in-from-top-1">{authError}</p>}
+            {authError && <p className="mt-2 text-sm font-bold text-red-500 animate-in slide-in-from-top-1">{authError}</p>}
+            
+            <div className="mt-3 text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+              💡 รหัสสำหรับทดสอบคือ 55555
+            </div>
 
-            <div className="mt-8 flex w-full gap-3">
+            <div className="mt-6 flex w-full gap-3">
               <button type="button" onClick={() => setIsAuthModalOpen(false)} className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">ยกเลิก</button>
-              <button type="button" onClick={handleConfirmPassword} className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md transition">ยืนยันรหัส</button>
+              <button type="button" onClick={() => verifyPassword(password)} className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md transition">ยืนยันรหัส</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ยืนยันการลบ */}
+      {planToDelete && (
+        <div className="fixed inset-0 z-[3500] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-4xl shadow-inner text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              คุณต้องการลบแผน <br />
+              <span className="font-bold text-slate-800 text-base">"{planToDelete.plan_name}"</span> <br />
+              ใช่หรือไม่?
+            </p>
+            <p className="text-xs text-red-500 font-bold bg-red-50 px-3 py-1.5 rounded-lg mb-6 w-full">
+              ⚠️ ข้อมูลนี้จะหายไปถาวรและไม่สามารถกู้คืนได้
+            </p>
+
+            <div className="flex w-full gap-3">
+              <button 
+                onClick={() => setPlanToDelete(null)} 
+                className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                onClick={handleConfirmDelete} 
+                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600 shadow-md transition"
+              >
+                ยืนยันการลบ
+              </button>
             </div>
           </div>
         </div>
@@ -457,6 +537,26 @@ export default function ReportsPage() {
                 <button type="submit" className="flex-1 rounded-xl bg-amber-500 py-3 text-sm font-bold text-white hover:bg-amber-600 shadow-md transition">💾 บันทึกการแก้ไข</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ Custom Alert Modal (ใช้แทน alert ทั่วไป) */}
+      {alertInfo && (
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+            <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full ${alertInfo.type === 'error' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'} shadow-inner`}>
+               {alertInfo.type === 'error' ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+               ) : (
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+               )}
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
+            <p className="text-sm text-slate-500 mb-6">{alertInfo.message}</p>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+              ตกลง
+            </button>
           </div>
         </div>
       )}
