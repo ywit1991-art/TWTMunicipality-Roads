@@ -110,10 +110,10 @@ export default function SurveyPage() {
   }
 
   return (
-    // ⭐ เพิ่ม overflow-x-hidden เพื่อไม่ให้หน้าจอเลื่อนซ้ายขวาได้
-    <div className="flex flex-col min-h-screen bg-slate-100/50 pb-10 overflow-x-hidden">
+    // ⭐ เปลี่ยนเป็น min-h-[100dvh] เพื่อแก้ปัญหาความสูงเพี้ยนใน WebView (LINE/FB)
+    <div className="flex flex-col min-h-[100dvh] bg-slate-100/50 pb-10">
       
-      <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-4 py-4 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
+      <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-4 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
             <span className="text-2xl md:text-3xl bg-white/20 p-1.5 md:p-2 rounded-xl backdrop-blur-sm shrink-0">📋</span> 
@@ -141,7 +141,7 @@ export default function SurveyPage() {
               <div className="space-y-5 md:space-y-5 pb-6">
                 <div>
                   <label className="mb-2 block text-base font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                  <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+                  <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                     <option value="">-- เลือกหมู่บ้าน --</option>
                     {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
@@ -154,7 +154,7 @@ export default function SurveyPage() {
 
                 <div>
                   <label className="mb-2 block text-base font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
-                  <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+                  <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                     <option value="">-- เลือกประเภท --</option>
                     {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -232,7 +232,8 @@ export default function SurveyPage() {
               </div>
             </div>
 
-            <div className="lg:col-span-6 xl:col-span-7 h-[500px] lg:h-full rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
+            {/* ปรับความสูงของแผนที่ให้ยืดหยุ่นตามหน้าจอ */}
+            <div className="lg:col-span-6 xl:col-span-7 h-[60vh] md:h-[500px] lg:h-auto rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
               <div className="w-full h-full rounded-2xl overflow-hidden relative">
                  <MapPicker
                   mode={isOtherWork ? 'single' : 'double'}
@@ -251,10 +252,10 @@ export default function SurveyPage() {
         </div>
       </main>
 
-      {/* Custom Alert Modal (แก้ปัญหาล้นจอแล้ว) */}
+      {/* Custom Alert Modal */}
       {alertInfo && (
-        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full ${alertInfo.type === 'error' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'} shadow-inner`}>
                {alertInfo.type === 'error' ? (
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -263,8 +264,7 @@ export default function SurveyPage() {
                )}
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
-            {/* ⭐ เพิ่ม break-words เพื่อให้ข้อความยาวๆ ตัดบรรทัดได้ */}
-            <p className="text-sm text-slate-500 mb-6 break-words w-full">{alertInfo.message}</p>
+            <p className="text-sm text-slate-500 mb-6">{alertInfo.message}</p>
             <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
@@ -274,8 +274,8 @@ export default function SurveyPage() {
 
       {/* Success Modal */}
       {successModalData && (
-        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-4xl shadow-inner text-emerald-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
