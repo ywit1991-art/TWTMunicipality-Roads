@@ -13,7 +13,8 @@ export const viewport: Viewport = {
   themeColor: '#1e3a8a',
   width: 'device-width',
   initialScale: 1,
-  // ⭐ ลบ maximumScale และ userScalable ออก เพื่อให้ผู้ใช้ซูมเองได้
+  maximumScale: 1, // ⭐ ล็อกไม่ให้ซูม
+  userScalable: false, // ⭐ ห้ามผู้ใช้ซูม (เพื่อให้แน่ใจว่าไม่เพี้ยน)
 };
 
 export const metadata: Metadata = {

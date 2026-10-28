@@ -2,8 +2,12 @@
 
 html,
 body {
-  font-family: 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-noto-thai), 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
   background-color: #f8fafc;
+  
+  /* ⭐ ห้าม WebView (LINE/FB) บังคับขยายฟอนต์ */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
 }
 
 /* ลบเส้นขอบดำเมื่อคลิกที่แผนที่ */
