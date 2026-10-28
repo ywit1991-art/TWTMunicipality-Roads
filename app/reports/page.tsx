@@ -41,7 +41,6 @@ export default function ReportsPage() {
   const [pendingAction, setPendingAction] = useState<{ type: 'edit' | 'delete', plan: VillagePlan } | null>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // ⭐ State สำหรับ Alert Modal
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string; type: 'error' | 'success' } | null>(null);
 
   async function loadData() {
@@ -107,11 +106,9 @@ export default function ReportsPage() {
     const { error } = await supabase.from('village_plans').delete().eq('id', planToDelete.id);
 
     if (error) {
-      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
       setAlertInfo({ title: 'ลบไม่สำเร็จ', message: error.message, type: 'error' });
     } else {
       loadData();
-      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
       setAlertInfo({ title: 'ลบข้อมูลสำเร็จ!', message: 'ข้อมูลแผนพัฒนาถูกลบออกจากระบบแล้ว', type: 'success' });
     }
     setPlanToDelete(null);
@@ -155,12 +152,10 @@ export default function ReportsPage() {
       }).eq('id', editingPlan.id);
 
     if (error) {
-      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
       setAlertInfo({ title: 'แก้ไขไม่สำเร็จ', message: error.message, type: 'error' });
     } else {
       setEditingPlan(null);
       loadData();
-      // ⭐ ใช้ Modal แจ้งเตือนแทน alert
       setAlertInfo({ title: 'แก้ไขข้อมูลสำเร็จ!', message: 'ข้อมูลแผนพัฒนาถูกอัปเดตเรียบร้อยแล้ว', type: 'success' });
     }
   }
@@ -168,7 +163,8 @@ export default function ReportsPage() {
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
 
   return (
-    <div className="min-h-screen pb-10 bg-slate-100/50">
+    // ⭐ เพิ่ม overflow-x-hidden
+    <div className="min-h-screen pb-10 bg-slate-100/50 overflow-x-hidden">
       
       <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
@@ -365,7 +361,7 @@ export default function ReportsPage() {
       {/* Modal ใส่รหัสผ่าน */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl shadow-inner">🔒</div>
             <h3 className="text-xl font-bold text-slate-800 mb-1">ยืนยันสิทธิ์การเข้าถึง</h3>
             <p className="text-sm text-slate-500 mb-6">กรุณากรอกรหัสผ่านเพื่อ{pendingAction?.type === 'edit' ? 'แก้ไข' : 'ลบ'}ข้อมูลนี้</p>
@@ -400,14 +396,14 @@ export default function ReportsPage() {
       {/* Modal ยืนยันการลบ */}
       {planToDelete && (
         <div className="fixed inset-0 z-[3500] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-4xl shadow-inner text-red-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 mb-4 break-words w-full">
               คุณต้องการลบแผน <br />
               <span className="font-bold text-slate-800 text-base">"{planToDelete.plan_name}"</span> <br />
               ใช่หรือไม่?
@@ -437,9 +433,9 @@ export default function ReportsPage() {
       {/* Modal แก้ไขข้อมูล + แผนที่ */}
       {editingPlan && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-5 text-white">
-              <h3 className="font-bold text-lg md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
+          <div className="w-[95%] max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-4 md:p-5 text-white">
+              <h3 className="font-bold text-base md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
               <button onClick={() => setEditingPlan(null)} className="rounded-full bg-white/20 w-8 h-8 flex items-center justify-center hover:bg-white/30 transition font-bold">✕</button>
             </div>
             
@@ -541,10 +537,10 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* ⭐ Custom Alert Modal (ใช้แทน alert ทั่วไป) */}
+      {/* Custom Alert Modal (แก้ปัญหาล้นจอแล้ว) */}
       {alertInfo && (
-        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full ${alertInfo.type === 'error' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'} shadow-inner`}>
                {alertInfo.type === 'error' ? (
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -553,7 +549,8 @@ export default function ReportsPage() {
                )}
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
-            <p className="text-sm text-slate-500 mb-6">{alertInfo.message}</p>
+            {/* ⭐ เพิ่ม break-words เพื่อให้ข้อความยาวๆ ตัดบรรทัดได้ */}
+            <p className="text-sm text-slate-500 mb-6 break-words w-full">{alertInfo.message}</p>
             <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
