@@ -2,12 +2,15 @@
 
 html,
 body {
-  font-family: var(--font-noto-thai), 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
   background-color: #f8fafc;
-  
-  /* ⭐ ห้าม WebView (LINE/FB) บังคับขยายฟอนต์ */
-  -webkit-text-size-adjust: 100% !important;
-  text-size-adjust: 100% !important;
+}
+
+/* ⭐ เพิ่มส่วนนี้: บังคับให้ฟอนต์พื้นฐานบนมือถือใหญ่ขึ้น */
+@media (max-width: 768px) {
+  html {
+    font-size: 18px; /* ขยายจาก 16px เป็น 18px */
+  }
 }
 
 /* ลบเส้นขอบดำเมื่อคลิกที่แผนที่ */
@@ -16,7 +19,6 @@ body {
 .leaflet-interactive {
   outline: none !important;
 }
-
 .leaflet-interactive:focus,
 .leaflet-interactive:active,
 .leaflet-container svg,

@@ -110,15 +110,14 @@ export default function SurveyPage() {
   }
 
   return (
-    // ⭐ เปลี่ยนจาก min-h-[100dvh] เป็น min-h-screen และเอา flex-col ออก เพื่อไม่ให้ดันพื้นที่ด้านล่างให้ยืด
     <div className="min-h-screen bg-slate-100/50 pb-10">
       
-      <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-4 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
+      <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-4 py-4 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
             <span className="text-2xl md:text-3xl bg-white/20 p-1.5 md:p-2 rounded-xl backdrop-blur-sm shrink-0">📋</span> 
             <div>
-              <h1 className="text-base md:text-2xl font-black tracking-tight leading-tight">
+              <h1 className="text-lg md:text-2xl font-black tracking-tight leading-tight">
                 ระบบสำรวจแผนพัฒนาหมู่บ้าน
               </h1>
               <p className="text-blue-200 mt-0.5 text-xs md:text-sm font-medium leading-tight">
@@ -126,34 +125,35 @@ export default function SurveyPage() {
               </p>
             </div>
           </div>
-          <Link href="/reports" className="shrink-0 rounded-xl bg-white/10 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold hover:bg-white/20 transition shadow-sm border border-white/10 backdrop-blur-sm flex items-center gap-1.5 md:gap-2">
+          <Link href="/reports" className="shrink-0 rounded-xl bg-white/10 px-3 py-2 md:px-5 md:py-2.5 text-sm md:text-base font-bold hover:bg-white/20 transition shadow-sm border border-white/10 backdrop-blur-sm flex items-center gap-1.5 md:gap-2">
             📊 <span className="hidden md:inline">ดูรายงาน</span>
           </Link>
         </div>
       </header>
 
-      {/* ⭐ เอา flex-1 และ h-full ออก ให้เนื้อหาไหลไปตามธรรมชาติ */}
       <main className="mx-auto max-w-7xl p-4 md:p-6 mt-2 md:mt-0">
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 md:gap-6">
           
           <div className="lg:col-span-4 xl:col-span-3 rounded-3xl bg-white p-5 md:p-6 shadow-sm border border-slate-200">
             <div className="space-y-5 md:space-y-5 pb-6">
+              
+              {/* ⭐ ปรับ label และ input ให้ใหญ่ขึ้น (text-lg / py-4) */}
               <div>
-                <label className="mb-2 block text-base font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
+                <label className="mb-2 block text-lg font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
+                <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                   <option value="">-- เลือกหมู่บ้าน --</option>
                   {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="mb-2 block text-base font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
-                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                <label className="mb-2 block text-lg font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
+                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
               </div>
 
               <div>
-                <label className="mb-2 block text-base font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
-                <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
+                <label className="mb-2 block text-lg font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
+                <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                   <option value="">-- เลือกประเภท --</option>
                   {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -163,28 +163,28 @@ export default function SurveyPage() {
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm md:text-base font-bold text-emerald-600 flex items-center gap-1">🟢 จุดเริ่มต้น</span>
-                      <button type="button" onClick={() => setPicking('start')} className={`text-xs px-2.5 py-1.5 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
+                      <span className="text-base font-bold text-emerald-600 flex items-center gap-1">🟢 จุดเริ่มต้น</span>
+                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
                     </div>
-                    <div className="text-sm text-slate-600 font-mono bg-white px-3 py-2.5 rounded-lg border border-slate-200 shadow-sm truncate">{start ? `${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
+                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{start ? `${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm md:text-base font-bold text-red-500 flex items-center gap-1">🔴 จุดสิ้นสุด</span>
-                      <button type="button" onClick={() => setPicking('end')} className={`text-xs px-2.5 py-1.5 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
+                      <span className="text-base font-bold text-red-500 flex items-center gap-1">🔴 จุดสิ้นสุด</span>
+                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
                     </div>
-                    <div className="text-sm text-slate-600 font-mono bg-white px-3 py-2.5 rounded-lg border border-slate-200 shadow-sm truncate">{end ? `${end.lat.toFixed(6)}, ${end.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
+                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{end ? `${end.lat.toFixed(6)}, ${end.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
                   </div>
 
                   <div className="flex gap-3 pt-1">
                     <div className="flex-1 rounded-xl bg-white p-3 border border-blue-200 shadow-sm">
-                      <div className="text-xs font-bold text-slate-500 mb-1">ระยะทาง</div>
-                      <div className="font-black text-lg text-blue-600">{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
+                      <div className="text-sm font-bold text-slate-500 mb-1">ระยะทาง</div>
+                      <div className="font-black text-xl text-blue-600">{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
                     </div>
                     <div className="flex-1">
-                      <label className="block text-xs font-bold text-slate-600 mb-1.5">ความกว้าง (ม.)</label>
-                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-lg border-none bg-slate-50 px-3 py-2.5 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                      <label className="block text-sm font-bold text-slate-600 mb-1.5">ความกว้าง (ม.)</label>
+                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-lg border-none bg-slate-50 px-3 py-3 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
                     </div>
                   </div>
                 </div>
@@ -194,45 +194,44 @@ export default function SurveyPage() {
                 <div className="space-y-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm md:text-base font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
-                      <span className="text-xs font-bold bg-white px-2 py-1 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
+                      <span className="text-base font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
+                      <span className="text-sm font-bold bg-white px-2 py-1 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
                     </div>
-                    <div className="text-sm text-slate-600 font-mono bg-white px-3 py-2.5 rounded-lg border border-slate-200 shadow-sm truncate">{location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
+                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5">รายละเอียด</label>
-                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-xl border-none bg-slate-50 px-3 py-2.5 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                    <label className="block text-sm font-bold text-slate-600 mb-1.5">รายละเอียด</label>
+                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-xl border-none bg-slate-50 px-3 py-3 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
                   </div>
                 </div>
               )}
 
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                <label className="mb-3 block text-base font-bold text-slate-700">ความพร้อม</label>
+                <label className="mb-3 block text-lg font-bold text-slate-700">ความพร้อม</label>
                 <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 transition">
-                    <input type="radio" checked={readiness === 'พร้อม'} onChange={() => setReadiness('พร้อม')} className="h-5 w-5 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                    <span className="text-base font-bold text-slate-700">✅ พร้อม</span>
+                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 transition">
+                    <input type="radio" checked={readiness === 'พร้อม'} onChange={() => setReadiness('พร้อม')} className="h-6 w-6 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    <span className="text-lg font-bold text-slate-700">✅ พร้อม</span>
                   </label>
-                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm hover:border-red-400 transition">
-                    <input type="radio" checked={readiness === 'ไม่พร้อม'} onChange={() => setReadiness('ไม่พร้อม')} className="h-5 w-5 text-red-600 focus:ring-red-500 cursor-pointer" />
-                    <span className="text-base font-bold text-slate-700">❌ ไม่พร้อม</span>
+                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-red-400 transition">
+                    <input type="radio" checked={readiness === 'ไม่พร้อม'} onChange={() => setReadiness('ไม่พร้อม')} className="h-6 w-6 text-red-600 focus:ring-red-500 cursor-pointer" />
+                    <span className="text-lg font-bold text-slate-700">❌ ไม่พร้อม</span>
                   </label>
                 </div>
                 {readiness === 'ไม่พร้อม' && (
                   <div className="mt-4 animate-in fade-in slide-in-from-top-2">
-                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border-none bg-red-50 px-4 py-3 text-base font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
+                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border-none bg-red-50 px-4 py-4 text-lg font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
                   </div>
                 )}
               </div>
 
-              <button type="submit" onClick={handleSubmit} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-lg font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
+              <button type="submit" onClick={handleSubmit} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-xl font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
                 {loading ? '⏳ กำลังบันทึก...' : '💾 ส่งบันทึกข้อมูล'}
               </button>
             </div>
           </div>
 
-          {/* ⭐ กำหนดความสูงแผนที่ให้ชัดเจน (มือถือ 400px, คอมใช้ sticky) */}
-          <div className="lg:col-span-6 xl:col-span-7 h-[400px] md:h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-6 rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
+          <div className="lg:col-span-6 xl:col-span-7 h-[50vh] md:h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-6 rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
             <div className="w-full h-full rounded-2xl overflow-hidden relative">
                <MapPicker
                 mode={isOtherWork ? 'single' : 'double'}
@@ -262,8 +261,8 @@ export default function SurveyPage() {
                )}
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
-            <p className="text-sm text-slate-500 mb-6">{alertInfo.message}</p>
-            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+            <p className="text-base text-slate-500 mb-6">{alertInfo.message}</p>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-4 text-base font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
           </div>
@@ -280,14 +279,14 @@ export default function SurveyPage() {
               </svg>
             </div>
             <h3 className="text-2xl font-black text-slate-800 mb-2">บันทึกสำเร็จ!</h3>
-            <p className="text-sm text-slate-500 mb-6">ข้อมูลแผนพัฒนาถูกบันทึกลงระบบเรียบร้อยแล้ว</p>
+            <p className="text-base text-slate-500 mb-6">ข้อมูลแผนพัฒนาถูกบันทึกลงระบบเรียบร้อยแล้ว</p>
             <div className="w-full rounded-xl bg-slate-50 p-4 border border-slate-200 mb-6 text-left space-y-1">
-              <div className="text-xs font-bold text-slate-400">หมู่บ้าน</div>
-              <div className="font-bold text-slate-800 mb-2">{successModalData.village}</div>
-              <div className="text-xs font-bold text-slate-400">ชื่อแผน</div>
-              <div className="font-bold text-slate-800 truncate">{successModalData.planName}</div>
+              <div className="text-sm font-bold text-slate-400">หมู่บ้าน</div>
+              <div className="font-bold text-slate-800 text-lg mb-2">{successModalData.village}</div>
+              <div className="text-sm font-bold text-slate-400">ชื่อแผน</div>
+              <div className="font-bold text-slate-800 text-lg truncate">{successModalData.planName}</div>
             </div>
-            <button onClick={() => setSuccessModalData(null)} className="w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-white hover:bg-emerald-600 transition shadow-md">
+            <button onClick={() => setSuccessModalData(null)} className="w-full rounded-xl bg-emerald-500 py-4 text-base font-bold text-white hover:bg-emerald-600 transition shadow-md">
               ตกลง
             </button>
           </div>
