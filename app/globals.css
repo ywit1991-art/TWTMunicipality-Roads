@@ -2,7 +2,7 @@
 
 html,
 body {
-  font-family: var(--font-noto-thai-looped), 'Noto Sans Thai Looped', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-trirong), 'Trirong', ui-sans-serif, system-ui, sans-serif;
   background-color: #f8fafc;
 }
 
@@ -22,8 +22,15 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
   padding: 8px 12px !important;
   color: #1e293b !important;
-  font-family: 'Noto Sans Thai Looped', sans-serif !important;
+  font-family: var(--font-trirong), 'Trirong', sans-serif !important;
 }
 .leaflet-tooltip-top:before {
   border-top-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ซ่อน outline เมื่อคลิกแผนที่ */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-interactive {
+  outline: none !important;
 }

@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans_Thai_Looped } from 'next/font/google';
+import { Trirong } from 'next/font/google';
 import './globals.css';
 
-const notoSansThaiLooped = Noto_Sans_Thai_Looped({
+const trirong = Trirong({
   subsets: ['thai', 'latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-noto-thai-looped',
+  variable: '--font-trirong',
   display: 'swap',
 });
 
@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={`${notoSansThaiLooped.variable} font-sans antialiased text-slate-800 bg-slate-50`}>
+      <body className={`${trirong.variable} font-sans antialiased text-slate-800 bg-slate-50`}>
         {children}
       </body>
     </html>

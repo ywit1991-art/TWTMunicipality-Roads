@@ -208,7 +208,6 @@ export default function SurveyPage() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50/50 font-sans">
       
-      {/* ⭐ Header สไตล์เดียวกับหน้ารายงาน */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
           <div className="flex items-center gap-3">
@@ -234,11 +233,9 @@ export default function SurveyPage() {
       <main className="mx-auto max-w-7xl p-4 md:p-6 mt-2 md:mt-4">
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           
-          {/* ⭐ ฟอร์มกรอกข้อมูล (การ์ดสีขาวสะอาดตา) */}
           <div className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-white p-5 md:p-6 shadow-sm border border-slate-200">
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              {/* ข้อมูลพื้นฐาน */}
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
                 <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl bg-slate-50 border-none px-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
@@ -260,7 +257,6 @@ export default function SurveyPage() {
                 </select>
               </div>
 
-              {/* ส่วนงานถนน */}
               {isRoadWork && (
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
                   
@@ -328,32 +324,36 @@ export default function SurveyPage() {
                 </div>
               )}
 
-              {/* ⭐ เปลี่ยนปุ่ม พร้อม/ไม่พร้อม เป็นปุ่มกดสไตล์เดียวกับหน้ารายงาน */}
+              {/* ⭐ ปุ่มพร้อม / ไม่พร้อม สไตล์ใหม่ (เหมือนปุ่มแก้ไข/ลบ) */}
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                 <label className="mb-2 block text-sm font-bold text-slate-700">ความพร้อม</label>
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-3 mb-3">
                   <button
                     type="button"
                     onClick={() => setReadiness('พร้อม')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
                       readiness === 'พร้อม'
-                        ? 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-200'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                        ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100' // สไตล์เดียวกับปุ่มสีเขียว
+                        : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     พร้อม
                   </button>
                   <button
                     type="button"
                     onClick={() => setReadiness('ไม่พร้อม')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
                       readiness === 'ไม่พร้อม'
-                        ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-200'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                        ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100' // สไตล์เดียวกับปุ่มลบ
+                        : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                     ไม่พร้อม
                   </button>
                 </div>
@@ -370,7 +370,6 @@ export default function SurveyPage() {
             </form>
           </div>
 
-          {/* ⭐ แผนที่ (ติดด้านข้างเมื่ออยู่บนคอม) */}
           <div className="lg:col-span-5 xl:col-span-6 h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-24 rounded-3xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden">
             <div className="w-full h-full rounded-2xl overflow-hidden relative">
                <MapPicker
@@ -397,7 +396,6 @@ export default function SurveyPage() {
         </div>
       </main>
 
-      {/* Modal แจ้งเตือน (เหมือนเดิม) */}
       {alertInfo && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -417,7 +415,6 @@ export default function SurveyPage() {
         </div>
       )}
 
-      {/* Success Modal */}
       {successModalData && (
         <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
