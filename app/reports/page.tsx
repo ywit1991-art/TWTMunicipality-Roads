@@ -1,10 +1,10 @@
 'use client';
+export const dynamic = 'force-dynamic'; // ⭐ เพิ่มบรรทัดนี้
 
 import { MapContainer, TileLayer, Polyline, Tooltip, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useState } from 'react';
-
 export type VillagePlan = {
   id: number;
   village: string;

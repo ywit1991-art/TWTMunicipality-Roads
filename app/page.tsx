@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic'; // ⭐ เพิ่มบรรทัดนี้
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
