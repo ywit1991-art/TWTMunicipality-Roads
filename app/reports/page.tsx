@@ -20,6 +20,7 @@ const ROAD_WORK_TYPES = ['ถนน คสล.', 'รางระบายน้
 const OTHER_WORK_TYPES = ['ปรับปรุง/ก่อสร้าง'];
 const ALL_TYPES = [...ROAD_WORK_TYPES, ...OTHER_WORK_TYPES];
 
+// ⭐ ฟังก์ชันคำนวณระยะทางเส้นตรง (Haversine formula)
 function getStraightLineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = lat1 * Math.PI/180;
@@ -42,6 +43,7 @@ export default function ReportsPage() {
   const [filterVillage, setFilterVillage] = useState('ทั้งหมด');
   const [filterType, setFilterType] = useState('ทั้งหมด');
 
+  // State สำหรับการแก้ไข
   const [editStart, setEditStart] = useState<LatLng | null>(null);
   const [editEnd, setEditEnd] = useState<LatLng | null>(null);
   const [editWaypoints, setEditWaypoints] = useState<LatLng[]>([]); 
@@ -185,6 +187,7 @@ export default function ReportsPage() {
       }
       else if (picking === 'waypoint') { 
         setEditWaypoints([...editWaypoints, p]); 
+        // ⭐ ถ้าปักจุดผ่าน ให้สลับเป็นโหมดวาดเองเพื่อให้เส้นวิ่งผ่านจุด
         if (!drawMode) setDrawMode(true); 
       }
       else { 
@@ -192,6 +195,19 @@ export default function ReportsPage() {
       }
     } else { 
       setEditLocation(p); 
+    }
+  }
+
+  // ⭐ ฟังก์ชันล้างจุดทั้งหมด
+  function handleClearAllPoints() {
+    if (confirm('คุณต้องการล้างจุดทั้งหมดและเริ่มวาดใหม่ใช่หรือไม่?')) {
+      setEditStart(null);
+      setEditEnd(null);
+      setEditWaypoints([]);
+      setEditLocation(null);
+      setEditDistance(null);
+      setEditRoutePath([]);
+      setPicking('start');
     }
   }
 
@@ -203,11 +219,9 @@ export default function ReportsPage() {
     let finalRoutePath = editRoutePath;
     if (isRoad) {
       if (drawMode) {
-        // ⭐ ถ้าเป็นโหมดวาดเอง ให้บันทึกเส้นตรงตามจุดที่ปักไว้
         const points = [editStart, ...editWaypoints, editEnd].filter(p => p !== null) as LatLng[];
         finalRoutePath = points.map(p => [p.lat, p.lng]);
       } else if (editStart && editEnd) {
-        // ⭐ ถ้าเป็นโหมดตามถนน ให้ดึง OSRM
         let coords = `${editStart.lng},${editStart.lat}`;
         editWaypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
         coords += `;${editEnd.lng},${editEnd.lat}`;
@@ -595,9 +609,18 @@ export default function ReportsPage() {
                       <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
                     </div>
 
-                    <button type="button" onClick={() => setPicking('waypoint')} className={`w-full text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
-                      {editWaypoints.length > 0 ? '📍 คลิกเพิ่มจุดผ่านต่อ' : '📍 เพิ่มจุดผ่าน'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                        {editWaypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
+                      </button>
+                      
+                      {/* ⭐ ปุ่มล้างจุดทั้งหมด */}
+                      {(editStart || editEnd || editWaypoints.length > 0) && (
+                        <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-xs">
+                          🗑️ ล้างจุด
+                        </button>
+                      )}
+                    </div>
                     {picking === 'waypoint' && <p className="text-[10px] text-amber-600 font-bold text-center animate-pulse">* คลิกแผนที่เพื่อเพิ่มจุดผ่าน</p>}
                   </div>
                 )}
@@ -617,6 +640,9 @@ export default function ReportsPage() {
                     onWaypointDelete={(idx) => {
                       setEditWaypoints(editWaypoints.filter((_, i) => i !== idx));
                     }}
+                    onClearStart={() => setEditStart(null)}
+                    onClearEnd={() => setEditEnd(null)}
+                    onClearLocation={() => setEditLocation(null)}
                     onRouteUpdate={(route) => setEditRoutePath(route)}
                     roadName={editingPlan.plan_name}
                     distanceKm={editDistance ? editDistance / 1000 : null}

@@ -3,12 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import nextDynamic from 'next/dynamic'; // ⭐ เปลี่ยนจาก dynamic เป็น nextDynamic
+import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { LatLng } from '@/lib/osrm';
+import { getRoadDistance, LatLng } from '@/lib/osrm';
 
-// ⭐ เปลี่ยนตรงนี้ด้วย
 const MapPicker = nextDynamic(() => import('@/components/MapPicker'), { 
   ssr: false,
   loading: () => <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">กำลังโหลดแผนที่...</div>
@@ -41,7 +40,6 @@ export default function SurveyPage() {
   const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
   const [drawMode, setDrawMode] = useState(false);
 
-  // ⭐ State สำหรับเก็บเส้นทาง
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
   const [location, setLocation] = useState<LatLng | null>(null);
@@ -94,6 +92,7 @@ export default function SurveyPage() {
         setPicking('end');
       } else if (picking === 'waypoint') {
         setWaypoints([...waypoints, p]);
+        if (!drawMode) setDrawMode(true); 
       } else {
         setEnd(p);
       }
@@ -116,6 +115,19 @@ export default function SurveyPage() {
   function handleWaypointDelete(index: number) {
     const newWaypoints = waypoints.filter((_, i) => i !== index);
     setWaypoints(newWaypoints);
+  }
+
+  // ⭐ ฟังก์ชันล้างจุดทั้งหมด
+  function handleClearAllPoints() {
+    if (confirm('คุณต้องการล้างจุดทั้งหมดและเริ่มวาดใหม่ใช่หรือไม่?')) {
+      setStart(null);
+      setEnd(null);
+      setWaypoints([]);
+      setLocation(null);
+      setDistance(null);
+      setRoutePath([]);
+      setPicking('start');
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -143,7 +155,8 @@ export default function SurveyPage() {
         width: isRoadWork && width ? parseFloat(width) : null,
         details: isOtherWork ? details : null,
         readiness, problem: readiness === 'ไม่พร้อม' ? problem : null,
-        route_path: isRoadWork ? routePath : null, // ⭐ บันทึกเส้นทางลง DB
+        waypoints: isRoadWork ? waypoints : null,
+        route_path: isRoadWork ? routePath : null,
       };
 
       const { error } = await supabase.from('village_plans').insert(payload);
@@ -153,8 +166,7 @@ export default function SurveyPage() {
       setSuccessModalData({ village, planName });
       
       setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setWaypoints([]); setLocation(null);
-      setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start');
-      setRoutePath([]); // ⭐ เคลียร์เส้นทาง
+      setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start'); setRoutePath([]);
       
     } catch (err: any) {
       setAlertInfo({ title: 'เกิดข้อผิดพลาด', message: err.message, type: 'error' });
@@ -228,12 +240,19 @@ export default function SurveyPage() {
                     <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
                   </div>
 
-                  <div className="pt-2 border-t border-blue-200">
-                    <button type="button" onClick={() => setPicking('waypoint')} className={`w-full text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
-                      {waypoints.length > 0 ? '📍 คลิกเพิ่มจุดผ่านต่อ' : '📍 เพิ่มจุดผ่าน'}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                      {waypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
                     </button>
-                    {picking === 'waypoint' && <p className="text-xs text-amber-600 font-bold mt-1 text-center animate-pulse">* คลิกบนแผนที่เพื่อเพิ่มจุดผ่าน</p>}
+                    
+                    {/* ⭐ ปุ่มล้างจุดทั้งหมด */}
+                    {(start || end || waypoints.length > 0) && (
+                      <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2.5 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-sm">
+                        🗑️ ล้างจุด
+                      </button>
+                    )}
                   </div>
+                  {picking === 'waypoint' && <p className="text-xs text-amber-600 font-bold mt-1 text-center animate-pulse">* คลิกบนแผนที่เพื่อเพิ่มจุดผ่าน</p>}
 
                   {waypoints.length > 0 && (
                     <div className="space-y-2 mt-2 bg-white p-3 rounded-xl border border-slate-200">
@@ -312,7 +331,10 @@ export default function SurveyPage() {
                 onDrag={handleMapDrag}
                 onWaypointDrag={handleWaypointDrag}
                 onWaypointDelete={handleWaypointDelete}
-                onRouteUpdate={(route) => setRoutePath(route)} // ⭐ ส่งเส้นทางกลับมาเก็บใน State
+                onClearStart={() => setStart(null)}
+                onClearEnd={() => setEnd(null)}
+                onClearLocation={() => setLocation(null)}
+                onRouteUpdate={(route) => setRoutePath(route)}
                 roadName={planName}
                 distanceKm={distance ? distance / 1000 : null}
                 fullHeight
