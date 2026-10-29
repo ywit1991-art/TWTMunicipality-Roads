@@ -2,31 +2,9 @@
 
 html,
 body {
-  font-family: 'Noto Sans Thai', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-noto-thai-looped), 'Noto Sans Thai Looped', ui-sans-serif, system-ui, sans-serif;
   background-color: #f8fafc;
 }
-
-/* ⭐ เพิ่มส่วนนี้: บังคับให้ฟอนต์พื้นฐานบนมือถือใหญ่ขึ้น */
-@media (max-width: 768px) {
-  html {
-    font-size: 18px; /* ขยายจาก 16px เป็น 18px */
-  }
-}
-
-/* ลบเส้นขอบดำเมื่อคลิกที่แผนที่ */
-.leaflet-container,
-.leaflet-container *,
-.leaflet-interactive {
-  outline: none !important;
-}
-.leaflet-interactive:focus,
-.leaflet-interactive:active,
-.leaflet-container svg,
-.leaflet-container path {
-  outline: none !important;
-  border: none !important;
-}
-
 
 /* ลดขนาดปุ่ม Zoom ของ Leaflet */
 .leaflet-control-zoom a {
@@ -44,7 +22,7 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
   padding: 8px 12px !important;
   color: #1e293b !important;
-  font-family: 'Noto Sans Thai', sans-serif !important;
+  font-family: 'Noto Sans Thai Looped', sans-serif !important;
 }
 .leaflet-tooltip-top:before {
   border-top-color: rgba(255, 255, 255, 0.95) !important;

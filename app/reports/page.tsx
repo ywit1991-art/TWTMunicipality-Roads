@@ -287,7 +287,6 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50/50 font-sans">
       
-      {/* ⭐ Header สไตล์โมเดิร์น ติดหนึบด้านบน */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
           <div className="flex items-center gap-3">
@@ -312,7 +311,6 @@ export default function ReportsPage() {
 
       <main className="mx-auto max-w-7xl mt-6 px-4 space-y-6 md:space-y-8">
         
-        {/* ⭐ แถบค้นหาและตัวกรอง (ออกแบบให้ดูเป็นกล่องเดียว) */}
         <div className="bg-white p-2 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
           <div className="flex-1 relative">
             <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -333,9 +331,7 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {/* ⭐ Stats Cards (ดีไซน์ Gradient สวยงาม) */}
         <div className="grid grid-cols-3 gap-3 md:gap-6">
-          {/* Card 1 */}
           <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-500 to-blue-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
             <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
@@ -347,7 +343,6 @@ export default function ReportsPage() {
             </div>
           </div>
           
-          {/* Card 2 */}
           <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
             <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
@@ -359,7 +354,6 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Card 3 */}
           <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-red-500 to-red-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
             <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
@@ -372,7 +366,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* ⭐ Map Section (ดีไซน์การ์ดสวยงาม) */}
         <div className="rounded-3xl bg-white p-2 md:p-4 shadow-sm border border-slate-200">
           <div className="p-2 md:p-0 mb-3 flex items-center gap-2">
             <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
@@ -393,7 +386,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* ⭐ Table Section (Desktop เป็น Table, Mobile เป็น Card) */}
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
@@ -413,7 +405,6 @@ export default function ReportsPage() {
             <div className="p-10 text-center text-slate-400 font-medium">ไม่พบข้อมูล</div>
           ) : (
             <>
-              {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
@@ -444,11 +435,22 @@ export default function ReportsPage() {
                         <td className="px-6 py-4 text-center font-bold text-slate-600">
                           {plan.width ? plan.width : '-'}
                         </td>
+                        
+                        {/* ⭐ ปุ่มความพร้อม (แก้ให้เป็น Outline เหมือนปุ่มแก้ไข) */}
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${plan.readiness === 'พร้อม' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                            {plan.readiness === 'พร้อม' ? '✅ พร้อม' : '❌ ไม่พร้อม'}
+                          <span className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold shadow-sm border transition ${
+                            plan.readiness === 'พร้อม' 
+                              ? 'text-emerald-600 border-emerald-200 hover:bg-emerald-50' 
+                              : 'text-red-600 border-red-200 hover:bg-red-50'
+                          }`}>
+                            {plan.readiness === 'พร้อม' ? (
+                              <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> พร้อม</>
+                            ) : (
+                              <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> ไม่พร้อม</>
+                            )}
                           </span>
                         </td>
+
                         <td className="px-6 py-4 text-center">
                           <div className="flex justify-center gap-2">
                             <button onClick={() => requestAuth('edit', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 shadow-sm transition">
@@ -467,7 +469,6 @@ export default function ReportsPage() {
                 </table>
               </div>
 
-              {/* Mobile Card List (PWA) */}
               <div className="md:hidden flex flex-col gap-4 p-4 bg-slate-50/50">
                 {filteredPlans.map((plan) => (
                   <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -476,7 +477,13 @@ export default function ReportsPage() {
                         <div className="text-xs font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md inline-block mb-1 border border-blue-100">{plan.village}</div>
                         <div className="font-bold text-slate-800 text-base leading-tight">{plan.plan_name}</div>
                       </div>
-                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold shadow-sm ${plan.readiness === 'พร้อม' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                      
+                      {/* ⭐ ปุ่มความพร้อมบนมือถือ (Outline) */}
+                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold shadow-sm border ${
+                        plan.readiness === 'พร้อม' 
+                          ? 'text-emerald-600 border-emerald-200' 
+                          : 'text-red-600 border-red-200'
+                      }`}>
                         {plan.readiness === 'พร้อม' ? '✅ พร้อม' : '❌ ไม่พร้อม'}
                       </span>
                     </div>
@@ -517,7 +524,6 @@ export default function ReportsPage() {
         </div>
       </main>
 
-      {/* ⭐ Modals (Auth, Delete, Edit) - ปรับแต่ง UI ให้ดูพรีเมียมขึ้น */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -632,15 +638,29 @@ export default function ReportsPage() {
 
                 <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
                   <label className="mb-2 block text-sm font-bold text-slate-700">ความพร้อม</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-                      <input type="radio" checked={editingPlan.readiness === 'พร้อม'} onChange={() => setEditingPlan({...editingPlan, readiness: 'พร้อม'})} className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-bold">✅ พร้อม</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-                      <input type="radio" checked={editingPlan.readiness === 'ไม่พร้อม'} onChange={() => setEditingPlan({...editingPlan, readiness: 'ไม่พร้อม'})} className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-bold">❌ ไม่พร้อม</span>
-                    </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingPlan({...editingPlan, readiness: 'พร้อม'})}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                        editingPlan.readiness === 'พร้อม'
+                          ? 'bg-emerald-500 text-white border-emerald-600'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      ✅ พร้อม
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPlan({...editingPlan, readiness: 'ไม่พร้อม'})}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                        editingPlan.readiness === 'ไม่พร้อม'
+                          ? 'bg-red-500 text-white border-red-600'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      ❌ ไม่พร้อม
+                    </button>
                   </div>
                   {editingPlan.readiness === 'ไม่พร้อม' && (
                     <div className="mt-3">

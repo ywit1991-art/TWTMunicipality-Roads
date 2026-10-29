@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans_Thai } from 'next/font/google';
+import { Noto_Sans_Thai_Looped } from 'next/font/google';
 import './globals.css';
 
-const notoSansThai = Noto_Sans_Thai({
+const notoSansThaiLooped = Noto_Sans_Thai_Looped({
   subsets: ['thai', 'latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-noto-thai',
+  variable: '--font-noto-thai-looped',
   display: 'swap',
 });
 
@@ -13,8 +13,6 @@ export const viewport: Viewport = {
   themeColor: '#1e3a8a',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1, // ⭐ ล็อกไม่ให้ซูม
-  userScalable: false, // ⭐ ห้ามผู้ใช้ซูม (เพื่อให้แน่ใจว่าไม่เพี้ยน)
 };
 
 export const metadata: Metadata = {
@@ -41,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      <body className={`${notoSansThai.variable} font-sans antialiased text-slate-800 bg-slate-50`}>
+      <body className={`${notoSansThaiLooped.variable} font-sans antialiased text-slate-800 bg-slate-50`}>
         {children}
       </body>
     </html>
