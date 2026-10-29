@@ -18,7 +18,6 @@ const ROAD_WORK_TYPES = ['ถนน คสล.', 'รางระบายน้
 const OTHER_WORK_TYPES = ['ปรับปรุง/ก่อสร้าง'];
 const ALL_TYPES = [...ROAD_WORK_TYPES, ...OTHER_WORK_TYPES];
 
-// ⭐ ฟังก์ชันคำนวณระยะทางเส้นตรง
 function getStraightLineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const φ1 = lat1 * Math.PI/180;
@@ -41,12 +40,11 @@ export default function ReportsPage() {
   const [filterVillage, setFilterVillage] = useState('ทั้งหมด');
   const [filterType, setFilterType] = useState('ทั้งหมด');
 
-  // State สำหรับการแก้ไข
   const [editStart, setEditStart] = useState<LatLng | null>(null);
   const [editEnd, setEditEnd] = useState<LatLng | null>(null);
-  const [editWaypoints, setEditWaypoints] = useState<LatLng[]>([]); // ⭐ เพิ่ม Waypoints
-  const [editRoutePath, setEditRoutePath] = useState<[number, number][]>([]); // ⭐ เก็บเส้นทาง
-  const [drawMode, setDrawMode] = useState(false); // ⭐ โหมดวาดเอง
+  const [editWaypoints, setEditWaypoints] = useState<LatLng[]>([]); 
+  const [editRoutePath, setEditRoutePath] = useState<[number, number][]>([]); 
+  const [drawMode, setDrawMode] = useState(false); 
   const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
 
   const [editLocation, setEditLocation] = useState<LatLng | null>(null);
@@ -133,11 +131,10 @@ export default function ReportsPage() {
     
     setEditWaypoints(plan.waypoints || []);
     setEditRoutePath(plan.route_path || []);
-    setDrawMode(false); // รีเซ็ตเป็นโหมดตามถนนก่อน
+    setDrawMode(false); // เริ่มต้นที่โหมดตามถนน
     setPicking('start');
   }
 
-  // ⭐ คำนวณระยะทางเมื่อแก้ไข
   useEffect(() => {
     const isRoad = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
     if (isRoad && editStart && editEnd) {
@@ -178,20 +175,50 @@ export default function ReportsPage() {
     } else { setEditLocation(p); }
   }
 
+  // ⭐ ฟังก์ชันบันทึกการแก้ไข (แก้ให้บันทึกเส้นทางได้ชัวร์ๆ)
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!editingPlan) return;
     const isRoad = ROAD_WORK_TYPES.includes(editingPlan.plan_type);
 
+    let finalRoutePath = editRoutePath;
+    if (isRoad) {
+      if (drawMode) {
+        // ถ้าเป็นโหมดวาดเอง ให้ดึงพิกัดที่ปักไว้มาสร้างเส้นตรง
+        const points = [editStart, ...editWaypoints, editEnd].filter(p => p !== null) as LatLng[];
+        finalRoutePath = points.map(p => [p.lat, p.lng]);
+      } else if (editStart && editEnd) {
+        // ถ้าเป็นโหมดตามถนน ให้ดึงจาก OSRM ตอนบันทึกเลย
+        let coords = `${editStart.lng},${editStart.lat}`;
+        editWaypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
+        coords += `;${editEnd.lng},${editEnd.lat}`;
+        try {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+          const data = await res.json();
+          if (data.code === 'Ok' && data.routes?.length > 0) {
+            finalRoutePath = data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
+          }
+        } catch (err) { console.error(err); }
+      }
+    }
+
     const { error } = await supabase.from('village_plans').update({
-        village: editingPlan.village, plan_name: editingPlan.plan_name, plan_type: editingPlan.plan_type,
-        readiness: editingPlan.readiness, problem: editingPlan.problem, details: editingPlan.details, width: editingPlan.width,
-        start_lat: isRoad ? editStart?.lat : null, start_lng: isRoad ? editStart?.lng : null,
-        end_lat: isRoad ? editEnd?.lat : null, end_lng: isRoad ? editEnd?.lng : null,
-        location_lat: !isRoad ? editLocation?.lat : null, location_lng: !isRoad ? editLocation?.lng : null,
+        village: editingPlan.village, 
+        plan_name: editingPlan.plan_name, 
+        plan_type: editingPlan.plan_type,
+        readiness: editingPlan.readiness, 
+        problem: editingPlan.problem, 
+        details: editingPlan.details, 
+        width: editingPlan.width,
+        start_lat: isRoad ? editStart?.lat : null, 
+        start_lng: isRoad ? editStart?.lng : null,
+        end_lat: isRoad ? editEnd?.lat : null, 
+        end_lng: isRoad ? editEnd?.lng : null,
+        location_lat: !isRoad ? editLocation?.lat : null, 
+        location_lng: !isRoad ? editLocation?.lng : null,
         distance_m: isRoad ? editDistance : null,
-        waypoints: isRoad ? editWaypoints : null, // ⭐ บันทึก waypoints
-        route_path: isRoad ? editRoutePath : null, // ⭐ บันทึก route_path
+        waypoints: isRoad ? editWaypoints : null, 
+        route_path: isRoad ? finalRoutePath : null, // ⭐ เซฟเส้นทางลงไป
       }).eq('id', editingPlan.id);
 
     if (error) {
@@ -208,7 +235,6 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen pb-10 bg-slate-100/50">
       
-      {/* Header และอื่นๆ เหมือนเดิม */}
       <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
@@ -230,7 +256,6 @@ export default function ReportsPage() {
 
       <main className="mx-auto max-w-7xl mt-4 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-8">
         
-        {/* ค้นหาและตัวกรอง */}
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
           <div className="flex-1 relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
@@ -249,7 +274,6 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-2 md:gap-5">
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition hover:shadow-md hover:-translate-y-1">
             <div className="hidden md:block absolute -right-4 -top-4 text-blue-500/10 text-8xl transition group-hover:scale-110 group-hover:rotate-12">📋</div>
@@ -282,7 +306,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Map */}
         <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
           <div className="p-3 md:p-4 flex items-center gap-2">
             <span className="text-xl md:text-2xl">🗺️</span>
@@ -299,7 +322,6 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
@@ -405,7 +427,6 @@ export default function ReportsPage() {
         </div>
       </main>
 
-      {/* Modal ใส่รหัสผ่าน */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -440,7 +461,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Modal ยืนยันการลบ */}
       {planToDelete && (
         <div className="fixed inset-0 z-[3500] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -467,7 +487,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* ⭐ Modal แก้ไขข้อมูล (เพิ่มโหมดวาดเอง) */}
       {editingPlan && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
@@ -540,10 +559,8 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              {/* ⭐ ฝั่งขวา: แผนที่ + เครื่องมือวาด */}
               <div className="flex flex-col h-[450px] lg:h-auto space-y-3">
                 
-                {/* โหมดวาดและจุดผ่าน */}
                 {isRoadWork && (
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col gap-2">
                     <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
@@ -581,7 +598,7 @@ export default function ReportsPage() {
                     onWaypointDelete={(idx) => {
                       setEditWaypoints(editWaypoints.filter((_, i) => i !== idx));
                     }}
-                    onRouteUpdate={(route) => setEditRoutePath(route)} // ⭐ อัปเดตเส้นทาง
+                    onRouteUpdate={(route) => setEditRoutePath(route)}
                     roadName={editingPlan.plan_name}
                     distanceKm={editDistance ? editDistance / 1000 : null}
                     fullHeight
@@ -598,7 +615,6 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Custom Alert Modal */}
       {alertInfo && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
