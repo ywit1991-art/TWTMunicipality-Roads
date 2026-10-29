@@ -1,41 +1,20 @@
 'use client';
-export const dynamic = 'force-dynamic'; // ⭐ เพิ่มบรรทัดนี้
 
-import { MapContainer, TileLayer, Polyline, Tooltip, CircleMarker, Popup, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { useEffect, useState } from 'react';
-export type VillagePlan = {
-  id: number;
-  village: string;
-  plan_name: string;
-  plan_type: string;
-  start_lat: number | null;
-  start_lng: number | null;
-  end_lat: number | null;
-  end_lng: number | null;
-  location_lat: number | null;
-  location_lng: number | null;
-  distance_m: number | null;
-  width: number | null;
-  details: string | null;
-  readiness: string;
-  problem: string | null;
-  created_at: string;
-  waypoints?: { lat: number; lng: number }[] | null; 
-  route_path?: [number, number][] | null;            
-};
+export const dynamic = 'force-dynamic';
 
-const TYPE_COLORS: Record<string, string> = {
-  'ถนน คสล.': '#ef4444',
-  'รางระบายน้ำ คสล.': '#3b82f6',
-  'วางท่อ คสล.': '#06b6d4',
-  'ถนนการเกษตร': '#10b981',
-  'ซ่อมแซมถนน': '#f59e0b',
-  'ขุดลอก': '#8b5cf6',
-  'ปรับปรุง/ก่อสร้าง': '#ec4899',
-};
-const DEFAULT_COLOR = '#64748b';
+import { useEffect, useState, useRef } from 'react';
+import nextDynamic from 'next/dynamic'; // ⭐ เปลี่ยนจาก dynamic เป็น nextDynamic
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { LatLng } from '@/lib/osrm';
+import type { VillagePlan } from '@/components/ReportsMap';
+
+// ⭐ เปลี่ยนตรงนี้ด้วย
+const MapPicker = nextDynamic(() => import('@/components/MapPicker'), { ssr: false });
+const ReportsMap = nextDynamic(() => import('@/components/ReportsMap'), { 
+  ssr: false,
+  loading: () => <div className="flex h-[300px] md:h-[600px] w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">กำลังโหลดแผนที่...</div>
+});
 
 async function fetchRoute(startLat: number, startLng: number, endLat: number, endLng: number) {
   const url = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;

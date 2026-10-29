@@ -1,13 +1,15 @@
 'use client';
-export const dynamic = 'force-dynamic'; // ⭐ เพิ่มบรรทัดนี้
+
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic'; // ⭐ เปลี่ยนจาก dynamic เป็น nextDynamic
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { LatLng } from '@/lib/osrm';
 
-const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
+// ⭐ เปลี่ยนตรงนี้ด้วย
+const MapPicker = nextDynamic(() => import('@/components/MapPicker'), { 
   ssr: false,
   loading: () => <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">กำลังโหลดแผนที่...</div>
 });
