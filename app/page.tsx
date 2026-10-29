@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { getRoadDistance, LatLng } from '@/lib/osrm';
+import { LatLng } from '@/lib/osrm';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
   ssr: false,
@@ -16,13 +16,31 @@ const ROAD_WORK_TYPES = ['ถนน คสล.', 'รางระบายน้
 const OTHER_WORK_TYPES = ['ปรับปรุง/ก่อสร้าง'];
 const ALL_TYPES = [...ROAD_WORK_TYPES, ...OTHER_WORK_TYPES];
 
+// ⭐ ฟังก์ชันคำนวณระยะทางเส้นตรง (Haversine formula)
+function getStraightLineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // metres
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 export default function SurveyPage() {
   const [village, setVillage] = useState('');
   const [planName, setPlanName] = useState('');
   const [planType, setPlanType] = useState('');
+  
   const [start, setStart] = useState<LatLng | null>(null);
   const [end, setEnd] = useState<LatLng | null>(null);
-  const [picking, setPicking] = useState<'start' | 'end'>('start');
+  const [waypoints, setWaypoints] = useState<LatLng[]>([]); 
+  const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
+  
+  // ⭐ State สำหรับโหมดวาดเส้นเอง
+  const [drawMode, setDrawMode] = useState(false);
+
   const [location, setLocation] = useState<LatLng | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [width, setWidth] = useState('');
@@ -37,19 +55,44 @@ export default function SurveyPage() {
   const isRoadWork = ROAD_WORK_TYPES.includes(planType);
   const isOtherWork = OTHER_WORK_TYPES.includes(planType);
 
+  // ⭐ คำนวณระยะทาง (ถ้าเป็นโหมดวาดเอง จะคำนวณจากเส้นตรง)
   useEffect(() => {
     if (isRoadWork && start && end) {
-      getRoadDistance(start, end).then((r) => setDistance(r.distance_m)).catch(() => setDistance(null));
+      if (drawMode) {
+        let points = [start, ...waypoints, end];
+        let total = 0;
+        for (let i = 0; i < points.length - 1; i++) {
+          total += getStraightLineDistance(points[i].lat, points[i].lng, points[i+1].lat, points[i+1].lng);
+        }
+        setDistance(total);
+      } else {
+        // คำนวณผ่าน OSRM
+        let coords = `${start.lng},${start.lat}`;
+        waypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
+        coords += `;${end.lng},${end.lat}`;
+        
+        fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.code === 'Ok' && data.routes?.length > 0) {
+              setDistance(data.routes[0].distance);
+            } else {
+              setDistance(null);
+            }
+          }).catch(() => setDistance(null));
+      }
     } else {
       setDistance(null);
     }
-  }, [start, end, isRoadWork]);
+  }, [start, end, waypoints, isRoadWork, drawMode]);
 
   function handleMapPick(p: LatLng) {
     if (isRoadWork) {
       if (picking === 'start') {
         setStart(p);
         setPicking('end');
+      } else if (picking === 'waypoint') {
+        setWaypoints([...waypoints, p]);
       } else {
         setEnd(p);
       }
@@ -61,6 +104,17 @@ export default function SurveyPage() {
   function handleMapDrag(which: 'start' | 'end', p: LatLng) {
     if (which === 'start') setStart(p);
     else setEnd(p);
+  }
+
+  function handleWaypointDrag(index: number, p: LatLng) {
+    const newWaypoints = [...waypoints];
+    newWaypoints[index] = p;
+    setWaypoints(newWaypoints);
+  }
+
+  function handleWaypointDelete(index: number) {
+    const newWaypoints = waypoints.filter((_, i) => i !== index);
+    setWaypoints(newWaypoints);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -99,7 +153,7 @@ export default function SurveyPage() {
 
       setSuccessModalData({ village, planName });
       
-      setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setLocation(null);
+      setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setWaypoints([]); setLocation(null);
       setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start');
       
     } catch (err: any) {
@@ -137,7 +191,6 @@ export default function SurveyPage() {
           <div className="lg:col-span-4 xl:col-span-3 rounded-3xl bg-white p-5 md:p-6 shadow-sm border border-slate-200">
             <div className="space-y-5 md:space-y-5 pb-6">
               
-              {/* ⭐ ปรับ label และ input ให้ใหญ่ขึ้น (text-lg / py-4) */}
               <div>
                 <label className="mb-2 block text-lg font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
                 <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
@@ -161,26 +214,44 @@ export default function SurveyPage() {
 
               {isRoadWork && (
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-base font-bold text-emerald-600 flex items-center gap-1">🟢 จุดเริ่มต้น</span>
-                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
+                  
+                  {/* ⭐ ปุ่มสลับโหมด */}
+                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
+                    <span className="text-sm font-bold text-slate-700">โหมดคำนวณ:</span>
+                    <div className="flex bg-slate-100 p-1 rounded-lg">
+                      <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
+                      <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
                     </div>
-                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{start ? `${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-base font-bold text-red-500 flex items-center gap-1">🔴 จุดสิ้นสุด</span>
-                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เลือกบนแผนที่</button>
-                    </div>
-                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{end ? `${end.lat.toFixed(6)}, ${end.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setPicking('start')} className={`flex-1 text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เริ่มต้น</button>
+                    <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
                   </div>
+
+                  <div className="pt-2 border-t border-blue-200">
+                    <button type="button" onClick={() => setPicking('waypoint')} className={`w-full text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                      {waypoints.length > 0 ? '📍 คลิกเพิ่มจุดผ่านต่อ' : '📍 เพิ่มจุดผ่าน'}
+                    </button>
+                    {picking === 'waypoint' && <p className="text-xs text-amber-600 font-bold mt-1 text-center animate-pulse">* คลิกบนแผนที่เพื่อเพิ่มจุดผ่าน</p>}
+                  </div>
+
+                  {waypoints.length > 0 && (
+                    <div className="space-y-2 mt-2 bg-white p-3 rounded-xl border border-slate-200">
+                      <div className="text-xs font-bold text-slate-500 mb-1">จุดผ่านที่กำหนด:</div>
+                      {waypoints.map((wp, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg text-sm border border-slate-100">
+                          <span className="font-bold text-slate-700">จุดที่ {idx + 1}</span>
+                          <button type="button" onClick={() => handleWaypointDelete(idx)} className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 rounded">ลบ</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex gap-3 pt-1">
-                    <div className="flex-1 rounded-xl bg-white p-3 border border-blue-200 shadow-sm">
-                      <div className="text-sm font-bold text-slate-500 mb-1">ระยะทาง</div>
-                      <div className="font-black text-xl text-blue-600">{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
+                    <div className={`flex-1 rounded-xl p-3 border shadow-sm ${drawMode ? 'bg-orange-50 border-orange-200' : 'bg-white border-blue-200'}`}>
+                      <div className={`text-sm font-bold mb-1 ${drawMode ? 'text-orange-600' : 'text-slate-500'}`}>ระยะทาง</div>
+                      <div className={`font-black text-xl ${drawMode ? 'text-orange-600' : 'text-blue-600'}`}>{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
                     </div>
                     <div className="flex-1">
                       <label className="block text-sm font-bold text-slate-600 mb-1.5">ความกว้าง (ม.)</label>
@@ -197,7 +268,6 @@ export default function SurveyPage() {
                       <span className="text-base font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
                       <span className="text-sm font-bold bg-white px-2 py-1 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
                     </div>
-                    <div className="text-sm md:text-base text-slate-600 font-mono bg-white px-3 py-3 rounded-lg border border-slate-200 shadow-sm truncate">{location ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}` : 'ยังไม่ได้เลือกพิกัด'}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1.5">รายละเอียด</label>
@@ -237,8 +307,12 @@ export default function SurveyPage() {
                 mode={isOtherWork ? 'single' : 'double'}
                 start={isRoadWork ? start : location}
                 end={end}
+                waypoints={waypoints} 
+                drawMode={drawMode} // ⭐ ส่งค่าโหมดวาดเอง
                 onPick={handleMapPick}
                 onDrag={handleMapDrag}
+                onWaypointDrag={handleWaypointDrag}
+                onWaypointDelete={handleWaypointDelete}
                 roadName={planName}
                 distanceKm={distance ? distance / 1000 : null}
                 fullHeight
@@ -249,7 +323,7 @@ export default function SurveyPage() {
         </div>
       </main>
 
-      {/* Custom Alert Modal */}
+      {/* Alert & Success Modals */}
       {alertInfo && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -269,7 +343,6 @@ export default function SurveyPage() {
         </div>
       )}
 
-      {/* Success Modal */}
       {successModalData && (
         <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">

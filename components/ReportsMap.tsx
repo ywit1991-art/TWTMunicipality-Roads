@@ -47,7 +47,6 @@ async function fetchRoute(startLat: number, startLng: number, endLat: number, en
   }
 }
 
-// คอมโพเนนต์สำหรับจัดขอบเขตแผนที่
 function MapBoundsController({ plans }: { plans: VillagePlan[] }) {
   const map = useMap();
 
@@ -72,6 +71,8 @@ function MapBoundsController({ plans }: { plans: VillagePlan[] }) {
 
 export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
+  // ⭐ State สำหรับสลับแผนที่
+  const [isSatellite, setIsSatellite] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -104,6 +105,17 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200">
+      {/* ⭐ ปุ่มสลับแผนที่ */}
+      <div className="absolute top-3 right-3 z-[1000]">
+        <button
+          type="button"
+          onClick={() => setIsSatellite(!isSatellite)}
+          className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
+        >
+          {isSatellite ? '🗺️ สลับเป็นแผนที่ถนน' : '🛰️ สลับเป็นดาวเทียม'}
+        </button>
+      </div>
+
       <MapContainer 
         center={[19.1907, 99.9315]} 
         zoom={15}
@@ -113,12 +125,21 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
         maxBoundsViscosity={1.0}
         style={{ height: '100%', width: '100%' }}
       >
-        <TileLayer 
-          attribution='Tiles &copy; Esri' 
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
-          maxNativeZoom={18}
-          maxZoom={20}
-        />
+        {/* ⭐ สลับ TileLayer ตาม State */}
+        {isSatellite ? (
+          <TileLayer 
+            attribution='Tiles &copy; Esri' 
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
+            maxNativeZoom={18}
+            maxZoom={20}
+          />
+        ) : (
+          <TileLayer 
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            maxZoom={19}
+          />
+        )}
 
         <MapBoundsController plans={plans} />
 
@@ -134,7 +155,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
           return (
             <div key={plan.id}>
-              {/* ⭐ Tooltip: ขึ้นเมื่อเอาเมาส์ชี้ (แสดงชื่อ + ประเภท) */}
               <Polyline positions={route} pathOptions={{ color, weight: 6, opacity: 0.9, lineCap: 'round' }}>
                 <Tooltip sticky>
                   <div className="text-center font-sans">
@@ -144,7 +164,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                 </Tooltip>
               </Polyline>
 
-              {/* ⭐ Popup: ขึ้นเมื่อคลิกจุด (แสดงชื่อ + ประเภท + ปุ่ม Street View) */}
               <CircleMarker center={startPoint} radius={8} pathOptions={{ color: 'white', weight: 3, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
