@@ -165,24 +165,24 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
           return (
             <div key={plan.id}>
-              {/* ⭐ ลดความหนาเส้นลง + เพิ่ม Opacity + เพิ่ม Hover Effect */}
+              {/* เส้นทาง */}
               <Polyline 
                 positions={route} 
                 pathOptions={{ 
                   color, 
-                  weight: 4, // บางลง
-                  opacity: 0.7, // โปร่งแสงเพื่อให้เห็นเส้นที่ซ้อนกัน
+                  weight: 4, 
+                  opacity: 0.7, 
                   lineCap: 'round',
                 }} 
                 eventHandlers={{
                   mouseover: (e) => {
                     const layer = e.target;
-                    layer.setStyle({ weight: 7, opacity: 1 }); // Hover แล้วหนาขึ้น ชัดขึ้น
-                    layer.bringToFront(); // ดึงขึ้นมาบนสุด
+                    layer.setStyle({ weight: 7, opacity: 1 }); 
+                    layer.bringToFront(); 
                   },
                   mouseout: (e) => {
                     const layer = e.target;
-                    layer.setStyle({ weight: 4, opacity: 0.7 }); // กลับเป็นเหมือนเดิม
+                    layer.setStyle({ weight: 4, opacity: 0.7 }); 
                   },
                 }}
               >
@@ -190,7 +190,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                   <div className="text-center font-sans">
                     <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
-                    {/* ⭐ เพิ่มระยะทางใน Tooltip */}
                     {plan.distance_m && (
                       <div className="text-xs font-bold text-blue-600 mt-1">
                         ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
@@ -200,22 +199,34 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                 </Tooltip>
               </Polyline>
 
+              {/* จุดเริ่มต้น (Popup มีระยะทางแล้ว) */}
               <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                    {plan.distance_m && (
+                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
+                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
+                      </div>
+                    )}
                     <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
                     <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                   </div>
                 </Popup>
               </CircleMarker>
 
+              {/* จุดสิ้นสุด (Popup มีระยะทางแล้ว) */}
               <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                    {plan.distance_m && (
+                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
+                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
+                      </div>
+                    )}
                     <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
                     <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                   </div>
