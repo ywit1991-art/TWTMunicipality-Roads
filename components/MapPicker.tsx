@@ -54,11 +54,12 @@ export default function MapPicker({
   start,
   end,
   waypoints = [],
-  drawMode = false, // ⭐ รับค่าโหมดวาดเส้นเอง
+  drawMode = false, 
   onPick,
   onDrag,
   onWaypointDrag,
   onWaypointDelete,
+  onRouteUpdate, // ⭐ รับฟังก์ชันอัปเดตเส้นทาง
   fullHeight,
 }: {
   mode?: 'single' | 'double';
@@ -70,6 +71,7 @@ export default function MapPicker({
   onDrag?: (which: 'start' | 'end', p: LatLng) => void;
   onWaypointDrag?: (index: number, p: LatLng) => void;
   onWaypointDelete?: (index: number) => void;
+  onRouteUpdate?: (route: [number, number][]) => void; // ⭐
   roadName?: string;
   distanceKm?: number | null;
   fullHeight?: boolean;
@@ -78,19 +80,18 @@ export default function MapPicker({
   const [locating, setLocating] = useState(false);
   const [isSatellite, setIsSatellite] = useState(true);
 
-  // ⭐ คำนวณเส้นทาง
   useEffect(() => {
+    let currentRoute: [number, number][] = [];
+
     if (mode === 'double' && start && end) {
       if (drawMode) {
-        // ถ้าเป็นโหมดวาดเส้นเอง ให้ต่อเส้นตรงจากจุดเริ่ม -> จุดผ่าน -> จุดสิ้นสุด
-        const straightLine: [number, number][] = [
+        currentRoute = [
           [start.lat, start.lng],
           ...waypoints.map(wp => [wp.lat, wp.lng] as [number, number]),
           [end.lat, end.lng]
         ];
-        setRoute(straightLine);
+        setRoute(currentRoute);
       } else {
-        // ถ้าเป็นโหมดปกติ ให้เรียก OSRM
         let coords = `${start.lng},${start.lat}`;
         waypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
         coords += `;${end.lng},${end.lat}`;
@@ -99,7 +100,8 @@ export default function MapPicker({
           .then(res => res.json())
           .then(data => {
             if (data.code === 'Ok' && data.routes?.length > 0) {
-              setRoute(data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]));
+              currentRoute = data.routes[0].geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng]);
+              setRoute(currentRoute);
             } else {
               setRoute([]);
             }
@@ -108,6 +110,10 @@ export default function MapPicker({
     } else {
       setRoute([]);
     }
+
+    // ⭐ ส่งเส้นทางกลับไปให้หน้าหลัก
+    if (onRouteUpdate) onRouteUpdate(currentRoute);
+
   }, [start?.lat, start?.lng, end?.lat, end?.lng, JSON.stringify(waypoints), mode, drawMode]);
 
   function useCurrentLocation() {
@@ -198,8 +204,7 @@ export default function MapPicker({
         {mode === 'double' && route.length > 0 && (
           <Polyline 
             positions={route} 
-            // ⭐ ถ้าเป็นโหมดวาดเอง ให้ใช้เส้นประสีส้ม เพื่อให้รู้ว่าไม่ใช่ถนนจริง
-            pathOptions={drawMode ? { color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 10' } : { color: '#3b82f6', weight: 6, opacity: 0.9 }} 
+            pathOptions={drawMode ? { color: '#f97316', weight: 5, opacity: 0.9, dashArray: '10, 10' } : { color: '#3b82f6', weight: 6, opacity: 0.9 }} 
           />
         )}
 

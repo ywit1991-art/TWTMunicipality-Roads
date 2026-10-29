@@ -22,6 +22,7 @@ export type VillagePlan = {
   readiness: string;
   problem: string | null;
   created_at: string;
+  route_path?: [number, number][] | null; // ⭐ เพิ่ม type สำหรับเส้นทาง
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -71,7 +72,6 @@ function MapBoundsController({ plans }: { plans: VillagePlan[] }) {
 
 export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
-  // ⭐ State สำหรับสลับแผนที่
   const [isSatellite, setIsSatellite] = useState(true);
 
   useEffect(() => {
@@ -80,10 +80,16 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
       for (const plan of plans) {
         if (plan.start_lat && plan.start_lng && plan.end_lat && plan.end_lng) {
           if (!routes[plan.id]) {
-            const r = await fetchRoute(plan.start_lat, plan.start_lng, plan.end_lat, plan.end_lng);
-            if (!mounted) return;
-            setRoutes((prev) => ({ ...prev, [plan.id]: r }));
-            await new Promise((res) => setTimeout(res, 1100));
+            // ⭐ ถ้ามี route_path ที่เซฟไว้ ให้ใช้เลย ไม่ต้อง fetch OSRM
+            if (plan.route_path && plan.route_path.length > 0) {
+              setRoutes((prev) => ({ ...prev, [plan.id]: plan.route_path! }));
+            } else {
+              // ถ้าเป็นข้อมูลเก่าที่ไม่มี route_path ให้ fetch จาก OSRM
+              const r = await fetchRoute(plan.start_lat, plan.start_lng, plan.end_lat, plan.end_lng);
+              if (!mounted) return;
+              setRoutes((prev) => ({ ...prev, [plan.id]: r }));
+              await new Promise((res) => setTimeout(res, 1100)); // หน่วง OSRM
+            }
           }
         }
       }
@@ -105,7 +111,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
   return (
     <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200">
-      {/* ⭐ ปุ่มสลับแผนที่ */}
       <div className="absolute top-3 right-3 z-[1000]">
         <button
           type="button"
@@ -125,7 +130,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
         maxBoundsViscosity={1.0}
         style={{ height: '100%', width: '100%' }}
       >
-        {/* ⭐ สลับ TileLayer ตาม State */}
         {isSatellite ? (
           <TileLayer 
             attribution='Tiles &copy; Esri' 

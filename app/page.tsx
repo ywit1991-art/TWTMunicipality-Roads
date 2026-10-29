@@ -16,9 +16,8 @@ const ROAD_WORK_TYPES = ['ถนน คสล.', 'รางระบายน้
 const OTHER_WORK_TYPES = ['ปรับปรุง/ก่อสร้าง'];
 const ALL_TYPES = [...ROAD_WORK_TYPES, ...OTHER_WORK_TYPES];
 
-// ⭐ ฟังก์ชันคำนวณระยะทางเส้นตรง (Haversine formula)
 function getStraightLineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // metres
+  const R = 6371e3;
   const φ1 = lat1 * Math.PI/180;
   const φ2 = lat2 * Math.PI/180;
   const Δφ = (lat2-lat1) * Math.PI/180;
@@ -37,9 +36,10 @@ export default function SurveyPage() {
   const [end, setEnd] = useState<LatLng | null>(null);
   const [waypoints, setWaypoints] = useState<LatLng[]>([]); 
   const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
-  
-  // ⭐ State สำหรับโหมดวาดเส้นเอง
   const [drawMode, setDrawMode] = useState(false);
+
+  // ⭐ State สำหรับเก็บเส้นทาง
+  const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
   const [location, setLocation] = useState<LatLng | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
@@ -55,7 +55,6 @@ export default function SurveyPage() {
   const isRoadWork = ROAD_WORK_TYPES.includes(planType);
   const isOtherWork = OTHER_WORK_TYPES.includes(planType);
 
-  // ⭐ คำนวณระยะทาง (ถ้าเป็นโหมดวาดเอง จะคำนวณจากเส้นตรง)
   useEffect(() => {
     if (isRoadWork && start && end) {
       if (drawMode) {
@@ -66,7 +65,6 @@ export default function SurveyPage() {
         }
         setDistance(total);
       } else {
-        // คำนวณผ่าน OSRM
         let coords = `${start.lng},${start.lat}`;
         waypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
         coords += `;${end.lng},${end.lat}`;
@@ -129,9 +127,6 @@ export default function SurveyPage() {
     if (isOtherWork && !location) {
       return setAlertInfo({ title: 'พิกัดไม่ครบถ้วน', message: 'กรุณาระบุ "ตำแหน่งที่ตั้ง" บนแผนที่ก่อนครับ', type: 'error' });
     }
-    if (readiness === 'ไม่พร้อม' && !problem.trim()) {
-      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณาระบุ "ปัญหาที่ไม่พร้อม" ด้วยครับ', type: 'error' });
-    }
 
     setLoading(true);
 
@@ -145,6 +140,7 @@ export default function SurveyPage() {
         width: isRoadWork && width ? parseFloat(width) : null,
         details: isOtherWork ? details : null,
         readiness, problem: readiness === 'ไม่พร้อม' ? problem : null,
+        route_path: isRoadWork ? routePath : null, // ⭐ บันทึกเส้นทางลง DB
       };
 
       const { error } = await supabase.from('village_plans').insert(payload);
@@ -155,6 +151,7 @@ export default function SurveyPage() {
       
       setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setWaypoints([]); setLocation(null);
       setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start');
+      setRoutePath([]); // ⭐ เคลียร์เส้นทาง
       
     } catch (err: any) {
       setAlertInfo({ title: 'เกิดข้อผิดพลาด', message: err.message, type: 'error' });
@@ -215,9 +212,8 @@ export default function SurveyPage() {
               {isRoadWork && (
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
                   
-                  {/* ⭐ ปุ่มสลับโหมด */}
                   <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
-                    <span className="text-sm font-bold text-slate-700">โหมดคำนวณ:</span>
+                    <span className="text-sm font-bold text-slate-700">โหมด:</span>
                     <div className="flex bg-slate-100 p-1 rounded-lg">
                       <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
                       <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
@@ -308,11 +304,12 @@ export default function SurveyPage() {
                 start={isRoadWork ? start : location}
                 end={end}
                 waypoints={waypoints} 
-                drawMode={drawMode} // ⭐ ส่งค่าโหมดวาดเอง
+                drawMode={drawMode}
                 onPick={handleMapPick}
                 onDrag={handleMapDrag}
                 onWaypointDrag={handleWaypointDrag}
                 onWaypointDelete={handleWaypointDelete}
+                onRouteUpdate={(route) => setRoutePath(route)} // ⭐ ส่งเส้นทางกลับมาเก็บใน State
                 roadName={planName}
                 distanceKm={distance ? distance / 1000 : null}
                 fullHeight
@@ -323,7 +320,6 @@ export default function SurveyPage() {
         </div>
       </main>
 
-      {/* Alert & Success Modals */}
       {alertInfo && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
