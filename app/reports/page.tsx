@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { getRoadDistance, LatLng } from '@/lib/osrm';
+import { LatLng } from '@/lib/osrm';
 import type { VillagePlan } from '@/components/ReportsMap';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
@@ -18,6 +18,18 @@ const ROAD_WORK_TYPES = ['ถนน คสล.', 'รางระบายน้
 const OTHER_WORK_TYPES = ['ปรับปรุง/ก่อสร้าง'];
 const ALL_TYPES = [...ROAD_WORK_TYPES, ...OTHER_WORK_TYPES];
 
+// ⭐ ฟังก์ชันคำนวณระยะทางเส้นตรง
+function getStraightLineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 export default function ReportsPage() {
   const [plans, setPlans] = useState<VillagePlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +41,16 @@ export default function ReportsPage() {
   const [filterVillage, setFilterVillage] = useState('ทั้งหมด');
   const [filterType, setFilterType] = useState('ทั้งหมด');
 
+  // State สำหรับการแก้ไข
   const [editStart, setEditStart] = useState<LatLng | null>(null);
   const [editEnd, setEditEnd] = useState<LatLng | null>(null);
+  const [editWaypoints, setEditWaypoints] = useState<LatLng[]>([]); // ⭐ เพิ่ม Waypoints
+  const [editRoutePath, setEditRoutePath] = useState<[number, number][]>([]); // ⭐ เก็บเส้นทาง
+  const [drawMode, setDrawMode] = useState(false); // ⭐ โหมดวาดเอง
+  const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
+
   const [editLocation, setEditLocation] = useState<LatLng | null>(null);
   const [editDistance, setEditDistance] = useState<number | null>(null);
-  const [picking, setPicking] = useState<'start' | 'end'>('start');
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [password, setPassword] = useState('');
@@ -88,23 +105,16 @@ export default function ReportsPage() {
     const val = e.target.value;
     setPassword(val);
     setAuthError('');
-    
-    if (val.length === 5) {
-      verifyPassword(val);
-    }
+    if (val.length === 5) verifyPassword(val);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      verifyPassword(password);
-    }
+    if (e.key === 'Enter') verifyPassword(password);
   };
 
   async function handleConfirmDelete() {
     if (!planToDelete || !planToDelete.id) return;
-
     const { error } = await supabase.from('village_plans').delete().eq('id', planToDelete.id);
-
     if (error) {
       setAlertInfo({ title: 'ลบไม่สำเร็จ', message: error.message, type: 'error' });
     } else {
@@ -119,21 +129,52 @@ export default function ReportsPage() {
     setEditStart(plan.start_lat && plan.start_lng ? { lat: plan.start_lat, lng: plan.start_lng } : null);
     setEditEnd(plan.end_lat && plan.end_lng ? { lat: plan.end_lat, lng: plan.end_lng } : null);
     setEditLocation(plan.location_lat && plan.location_lng ? { lat: plan.location_lat, lng: plan.location_lng } : null);
-    setEditDistance(plan.distance_m); setPicking('start');
+    setEditDistance(plan.distance_m); 
+    
+    setEditWaypoints(plan.waypoints || []);
+    setEditRoutePath(plan.route_path || []);
+    setDrawMode(false); // รีเซ็ตเป็นโหมดตามถนนก่อน
+    setPicking('start');
   }
 
+  // ⭐ คำนวณระยะทางเมื่อแก้ไข
   useEffect(() => {
     const isRoad = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
     if (isRoad && editStart && editEnd) {
-      getRoadDistance(editStart, editEnd).then((r) => setEditDistance(r.distance_m)).catch(() => setEditDistance(null));
-    } else { setEditDistance(null); }
-  }, [editStart, editEnd, editingPlan]);
+      if (drawMode) {
+        let points = [editStart, ...editWaypoints, editEnd];
+        let total = 0;
+        for (let i = 0; i < points.length - 1; i++) {
+          total += getStraightLineDistance(points[i].lat, points[i].lng, points[i+1].lat, points[i+1].lng);
+        }
+        setEditDistance(total);
+      } else {
+        let coords = `${editStart.lng},${editStart.lat}`;
+        editWaypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
+        coords += `;${editEnd.lng},${editEnd.lat}`;
+        
+        fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.code === 'Ok' && data.routes?.length > 0) {
+              setEditDistance(data.routes[0].distance);
+            } else {
+              setEditDistance(null);
+            }
+          }).catch(() => setEditDistance(null));
+      }
+    } else {
+      setEditDistance(null);
+    }
+  }, [editStart, editEnd, editWaypoints, editingPlan, drawMode]);
 
   function handleMapPick(p: LatLng) {
     if (!editingPlan) return;
     const isRoad = ROAD_WORK_TYPES.includes(editingPlan.plan_type);
     if (isRoad) {
-      if (picking === 'start') { setEditStart(p); setPicking('end'); } else { setEditEnd(p); }
+      if (picking === 'start') { setEditStart(p); setPicking('end'); }
+      else if (picking === 'waypoint') { setEditWaypoints([...editWaypoints, p]); }
+      else { setEditEnd(p); }
     } else { setEditLocation(p); }
   }
 
@@ -149,6 +190,8 @@ export default function ReportsPage() {
         end_lat: isRoad ? editEnd?.lat : null, end_lng: isRoad ? editEnd?.lng : null,
         location_lat: !isRoad ? editLocation?.lat : null, location_lng: !isRoad ? editLocation?.lng : null,
         distance_m: isRoad ? editDistance : null,
+        waypoints: isRoad ? editWaypoints : null, // ⭐ บันทึก waypoints
+        route_path: isRoad ? editRoutePath : null, // ⭐ บันทึก route_path
       }).eq('id', editingPlan.id);
 
     if (error) {
@@ -163,9 +206,9 @@ export default function ReportsPage() {
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
 
   return (
-    // ⭐ เพิ่ม overflow-x-hidden
-    <div className="min-h-screen pb-10 bg-slate-100/50 overflow-x-hidden">
+    <div className="min-h-screen pb-10 bg-slate-100/50">
       
+      {/* Header และอื่นๆ เหมือนเดิม */}
       <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-3 py-3 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
@@ -187,6 +230,7 @@ export default function ReportsPage() {
 
       <main className="mx-auto max-w-7xl mt-4 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-8">
         
+        {/* ค้นหาและตัวกรอง */}
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
           <div className="flex-1 relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
@@ -205,6 +249,7 @@ export default function ReportsPage() {
           )}
         </div>
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-2 md:gap-5">
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition hover:shadow-md hover:-translate-y-1">
             <div className="hidden md:block absolute -right-4 -top-4 text-blue-500/10 text-8xl transition group-hover:scale-110 group-hover:rotate-12">📋</div>
@@ -237,6 +282,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
+        {/* Map */}
         <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
           <div className="p-3 md:p-4 flex items-center gap-2">
             <span className="text-xl md:text-2xl">🗺️</span>
@@ -253,6 +299,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
+        {/* Table */}
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
@@ -361,7 +408,7 @@ export default function ReportsPage() {
       {/* Modal ใส่รหัสผ่าน */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl shadow-inner">🔒</div>
             <h3 className="text-xl font-bold text-slate-800 mb-1">ยืนยันสิทธิ์การเข้าถึง</h3>
             <p className="text-sm text-slate-500 mb-6">กรุณากรอกรหัสผ่านเพื่อ{pendingAction?.type === 'edit' ? 'แก้ไข' : 'ลบ'}ข้อมูลนี้</p>
@@ -396,14 +443,14 @@ export default function ReportsPage() {
       {/* Modal ยืนยันการลบ */}
       {planToDelete && (
         <div className="fixed inset-0 z-[3500] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-4xl shadow-inner text-red-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
-            <p className="text-sm text-slate-500 mb-4 break-words w-full">
+            <p className="text-sm text-slate-500 mb-4">
               คุณต้องการลบแผน <br />
               <span className="font-bold text-slate-800 text-base">"{planToDelete.plan_name}"</span> <br />
               ใช่หรือไม่?
@@ -413,29 +460,19 @@ export default function ReportsPage() {
             </p>
 
             <div className="flex w-full gap-3">
-              <button 
-                onClick={() => setPlanToDelete(null)} 
-                className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
-              >
-                ยกเลิก
-              </button>
-              <button 
-                onClick={handleConfirmDelete} 
-                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600 shadow-md transition"
-              >
-                ยืนยันการลบ
-              </button>
+              <button onClick={() => setPlanToDelete(null)} className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">ยกเลิก</button>
+              <button onClick={handleConfirmDelete} className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-600 shadow-md transition">ยืนยันการลบ</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal แก้ไขข้อมูล + แผนที่ */}
+      {/* ⭐ Modal แก้ไขข้อมูล (เพิ่มโหมดวาดเอง) */}
       {editingPlan && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[95%] max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-4 md:p-5 text-white">
-              <h3 className="font-bold text-base md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-5 text-white">
+              <h3 className="font-bold text-lg md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
               <button onClick={() => setEditingPlan(null)} className="rounded-full bg-white/20 w-8 h-8 flex items-center justify-center hover:bg-white/30 transition font-bold">✕</button>
             </div>
             
@@ -503,24 +540,48 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col h-[350px] lg:h-auto space-y-3">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-100 p-2 rounded-lg gap-2">
-                  <span className="text-sm font-bold text-slate-700">📍 คลิกแผนที่เพื่อเปลี่ยนตำแหน่ง</span>
-                  {isRoadWork && (
-                    <div className="flex gap-2 w-full md:w-auto">
-                      <button type="button" onClick={() => setPicking('start')} className={`flex-1 md:flex-none text-xs px-3 py-1.5 rounded-md font-bold transition ${picking === 'start' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-500'}`}>จุดเริ่มต้น</button>
-                      <button type="button" onClick={() => setPicking('end')} className={`flex-1 md:flex-none text-xs px-3 py-1.5 rounded-md font-bold transition ${picking === 'end' ? 'bg-red-500 text-white' : 'bg-white text-slate-500'}`}>จุดสิ้นสุด</button>
-                    </div>
-                  )}
-                </div>
+              {/* ⭐ ฝั่งขวา: แผนที่ + เครื่องมือวาด */}
+              <div className="flex flex-col h-[450px] lg:h-auto space-y-3">
                 
+                {/* โหมดวาดและจุดผ่าน */}
+                {isRoadWork && (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col gap-2">
+                    <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
+                      <span className="text-sm font-bold text-slate-700">โหมด:</span>
+                      <div className="flex bg-slate-100 p-1 rounded-lg">
+                        <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
+                        <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setPicking('start')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เริ่มต้น</button>
+                      <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
+                    </div>
+
+                    <button type="button" onClick={() => setPicking('waypoint')} className={`w-full text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                      {editWaypoints.length > 0 ? '📍 คลิกเพิ่มจุดผ่านต่อ' : '📍 เพิ่มจุดผ่าน'}
+                    </button>
+                    {picking === 'waypoint' && <p className="text-[10px] text-amber-600 font-bold text-center animate-pulse">* คลิกแผนที่เพื่อเพิ่มจุดผ่าน</p>}
+                  </div>
+                )}
+
                 <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
                   <MapPicker
                     mode={isRoadWork ? 'double' : 'single'}
                     start={isRoadWork ? editStart : editLocation}
                     end={editEnd}
+                    waypoints={editWaypoints}
+                    drawMode={drawMode}
                     onPick={handleMapPick}
                     onDrag={(which, p) => { if (which === 'start') setEditStart(p); else setEditEnd(p); }}
+                    onWaypointDrag={(idx, p) => {
+                      const newWp = [...editWaypoints]; newWp[idx] = p; setEditWaypoints(newWp);
+                    }}
+                    onWaypointDelete={(idx) => {
+                      setEditWaypoints(editWaypoints.filter((_, i) => i !== idx));
+                    }}
+                    onRouteUpdate={(route) => setEditRoutePath(route)} // ⭐ อัปเดตเส้นทาง
                     roadName={editingPlan.plan_name}
                     distanceKm={editDistance ? editDistance / 1000 : null}
                     fullHeight
@@ -537,10 +598,10 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Custom Alert Modal (แก้ปัญหาล้นจอแล้ว) */}
+      {/* Custom Alert Modal */}
       {alertInfo && (
-        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-[90%] max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
+        <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
             <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full ${alertInfo.type === 'error' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'} shadow-inner`}>
                {alertInfo.type === 'error' ? (
                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -549,9 +610,8 @@ export default function ReportsPage() {
                )}
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
-            {/* ⭐ เพิ่ม break-words เพื่อให้ข้อความยาวๆ ตัดบรรทัดได้ */}
-            <p className="text-sm text-slate-500 mb-6 break-words w-full">{alertInfo.message}</p>
-            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+            <p className="text-base text-slate-500 mb-6">{alertInfo.message}</p>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-4 text-base font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
           </div>
