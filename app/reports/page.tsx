@@ -133,7 +133,14 @@ export default function ReportsPage() {
     
     setEditWaypoints(plan.waypoints || []);
     setEditRoutePath(plan.route_path || []);
-    setDrawMode(false); // เริ่มต้นที่โหมดตามถนน
+    
+    // ⭐ ถ้าเคยมีจุดผ่าน ให้เปิดโหมดวาดเองอัตโนมัติ เพื่อไม่ให้โดน OSRM ทับ
+    if (plan.waypoints && plan.waypoints.length > 0) {
+      setDrawMode(true);
+    } else {
+      setDrawMode(false); 
+    }
+    
     setPicking('start');
   }
 
@@ -178,7 +185,6 @@ export default function ReportsPage() {
       }
       else if (picking === 'waypoint') { 
         setEditWaypoints([...editWaypoints, p]); 
-        // ⭐ ถ้าปักจุดผ่าน ให้สลับเป็นโหมดวาดเองเพื่อให้เส้นวิ่งผ่านจุด
         if (!drawMode) setDrawMode(true); 
       }
       else { 
@@ -197,9 +203,11 @@ export default function ReportsPage() {
     let finalRoutePath = editRoutePath;
     if (isRoad) {
       if (drawMode) {
+        // ⭐ ถ้าเป็นโหมดวาดเอง ให้บันทึกเส้นตรงตามจุดที่ปักไว้
         const points = [editStart, ...editWaypoints, editEnd].filter(p => p !== null) as LatLng[];
         finalRoutePath = points.map(p => [p.lat, p.lng]);
       } else if (editStart && editEnd) {
+        // ⭐ ถ้าเป็นโหมดตามถนน ให้ดึง OSRM
         let coords = `${editStart.lng},${editStart.lat}`;
         editWaypoints.forEach(wp => { coords += `;${wp.lng},${wp.lat}`; });
         coords += `;${editEnd.lng},${editEnd.lat}`;
