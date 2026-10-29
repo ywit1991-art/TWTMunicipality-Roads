@@ -186,26 +186,28 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                   },
                 }}
               >
+                {/* ⭐ Tooltip (ป้ายที่ขึ้นตอนเอาเมาส์ชี้) */}
                 <Tooltip sticky>
-                  <div className="text-center font-sans">
-                    <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
-                    <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
-                    {plan.distance_m && (
-                      <div className="text-xs font-bold text-blue-600 mt-1">
-                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
+                  <div className="text-center font-sans p-1">
+                    <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
+                    <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
+                    {/* ⭐ ใส่ระยะทางตรงนี้ */}
+                    {plan.distance_m != null && (
+                      <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-50 px-2 py-0.5 rounded-full inline-block">
+                        📏 {(plan.distance_m / 1000).toFixed(3)} กม.
                       </div>
                     )}
                   </div>
                 </Tooltip>
               </Polyline>
 
-              {/* จุดเริ่มต้น (Popup มีระยะทางแล้ว) */}
+              {/* จุดเริ่มต้น */}
               <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    {plan.distance_m && (
+                    {plan.distance_m != null && (
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
                         ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
                       </div>
@@ -216,13 +218,13 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                 </Popup>
               </CircleMarker>
 
-              {/* จุดสิ้นสุด (Popup มีระยะทางแล้ว) */}
+              {/* จุดสิ้นสุด */}
               <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    {plan.distance_m && (
+                    {plan.distance_m != null && (
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
                         ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
                       </div>
