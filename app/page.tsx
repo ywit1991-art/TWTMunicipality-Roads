@@ -42,6 +42,12 @@ export default function SurveyPage() {
 
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
+  // ⭐ State สำหรับช่องกรอกพิกัด
+  const [startLat, setStartLat] = useState('');
+  const [startLng, setStartLng] = useState('');
+  const [endLat, setEndLat] = useState('');
+  const [endLng, setEndLng] = useState('');
+
   const [location, setLocation] = useState<LatLng | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [width, setWidth] = useState('');
@@ -89,12 +95,16 @@ export default function SurveyPage() {
     if (isRoadWork) {
       if (picking === 'start') {
         setStart(p);
+        setStartLat(p.lat.toString());
+        setStartLng(p.lng.toString());
         setPicking('end');
       } else if (picking === 'waypoint') {
         setWaypoints([...waypoints, p]);
         if (!drawMode) setDrawMode(true); 
       } else {
         setEnd(p);
+        setEndLat(p.lat.toString());
+        setEndLng(p.lng.toString());
       }
     } else {
       setLocation(p);
@@ -102,8 +112,25 @@ export default function SurveyPage() {
   }
 
   function handleMapDrag(which: 'start' | 'end', p: LatLng) {
-    if (which === 'start') setStart(p);
-    else setEnd(p);
+    if (which === 'start') {
+      setStart(p);
+      setStartLat(p.lat.toString());
+      setStartLng(p.lng.toString());
+    } else {
+      setEnd(p);
+      setEndLat(p.lat.toString());
+      setEndLng(p.lng.toString());
+    }
+  }
+
+  // ⭐ ฟังก์ชันแปลงค่าจากช่องกรอก
+  function applyCoords(type: 'start' | 'end', latStr: string, lngStr: string) {
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      if (type === 'start') setStart({ lat, lng });
+      else setEnd({ lat, lng });
+    }
   }
 
   function handleWaypointDrag(index: number, p: LatLng) {
@@ -117,11 +144,10 @@ export default function SurveyPage() {
     setWaypoints(newWaypoints);
   }
 
-  // ⭐ ฟังก์ชันล้างจุดทั้งหมด
   function handleClearAllPoints() {
     if (confirm('คุณต้องการล้างจุดทั้งหมดและเริ่มวาดใหม่ใช่หรือไม่?')) {
-      setStart(null);
-      setEnd(null);
+      setStart(null); setStartLat(''); setStartLng('');
+      setEnd(null); setEndLat(''); setEndLng('');
       setWaypoints([]);
       setLocation(null);
       setDistance(null);
@@ -165,7 +191,10 @@ export default function SurveyPage() {
 
       setSuccessModalData({ village, planName });
       
-      setVillage(''); setPlanName(''); setPlanType(''); setStart(null); setEnd(null); setWaypoints([]); setLocation(null);
+      setVillage(''); setPlanName(''); setPlanType(''); 
+      setStart(null); setStartLat(''); setStartLng('');
+      setEnd(null); setEndLat(''); setEndLng('');
+      setWaypoints([]); setLocation(null);
       setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start'); setRoutePath([]);
       
     } catch (err: any) {
@@ -235,36 +264,58 @@ export default function SurveyPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setPicking('start')} className={`flex-1 text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เริ่มต้น</button>
-                    <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
+                  {/* ⭐ เพิ่มช่องกรอกพิกัดจุดเริ่มต้น */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="number" step="any" placeholder="ละติจูด (Lat)" 
+                        value={startLat} 
+                        onChange={(e) => { setStartLat(e.target.value); applyCoords('start', e.target.value, startLng); }}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" 
+                      />
+                      <input 
+                        type="number" step="any" placeholder="ลองจิจูด (Lng)" 
+                        value={startLng} 
+                        onChange={(e) => { setStartLng(e.target.value); applyCoords('start', startLat, e.target.value); }}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* ⭐ เพิ่มช่องกรอกพิกัดจุดสิ้นสุด */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="number" step="any" placeholder="ละติจูด (Lat)" 
+                        value={endLat} 
+                        onChange={(e) => { setEndLat(e.target.value); applyCoords('end', e.target.value, endLng); }}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" 
+                      />
+                      <input 
+                        type="number" step="any" placeholder="ลองจิจูด (Lng)" 
+                        value={endLng} 
+                        onChange={(e) => { setEndLng(e.target.value); applyCoords('end', endLat, e.target.value); }}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" 
+                      />
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
                       {waypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
                     </button>
-                    
-                    {/* ⭐ ปุ่มล้างจุดทั้งหมด */}
                     {(start || end || waypoints.length > 0) && (
                       <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2.5 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-sm">
                         🗑️ ล้างจุด
                       </button>
                     )}
                   </div>
-                  {picking === 'waypoint' && <p className="text-xs text-amber-600 font-bold mt-1 text-center animate-pulse">* คลิกบนแผนที่เพื่อเพิ่มจุดผ่าน</p>}
-
-                  {waypoints.length > 0 && (
-                    <div className="space-y-2 mt-2 bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="text-xs font-bold text-slate-500 mb-1">จุดผ่านที่กำหนด:</div>
-                      {waypoints.map((wp, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg text-sm border border-slate-100">
-                          <span className="font-bold text-slate-700">จุดที่ {idx + 1}</span>
-                          <button type="button" onClick={() => handleWaypointDelete(idx)} className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 rounded">ลบ</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   <div className="flex gap-3 pt-1">
                     <div className={`flex-1 rounded-xl p-3 border shadow-sm ${drawMode ? 'bg-orange-50 border-orange-200' : 'bg-white border-blue-200'}`}>
@@ -331,8 +382,8 @@ export default function SurveyPage() {
                 onDrag={handleMapDrag}
                 onWaypointDrag={handleWaypointDrag}
                 onWaypointDelete={handleWaypointDelete}
-                onClearStart={() => setStart(null)}
-                onClearEnd={() => setEnd(null)}
+                onClearStart={() => { setStart(null); setStartLat(''); setStartLng(''); }}
+                onClearEnd={() => { setEnd(null); setEndLat(''); setEndLng(''); }}
                 onClearLocation={() => setLocation(null)}
                 onRouteUpdate={(route) => setRoutePath(route)}
                 roadName={planName}

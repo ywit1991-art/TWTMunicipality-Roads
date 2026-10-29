@@ -51,6 +51,12 @@ export default function ReportsPage() {
   const [drawMode, setDrawMode] = useState(false); 
   const [picking, setPicking] = useState<'start' | 'end' | 'waypoint'>('start');
 
+  // ⭐ State สำหรับช่องกรอกพิกัดในหน้าแก้ไข
+  const [editStartLat, setEditStartLat] = useState('');
+  const [editStartLng, setEditStartLng] = useState('');
+  const [editEndLat, setEditEndLat] = useState('');
+  const [editEndLng, setEditEndLng] = useState('');
+
   const [editLocation, setEditLocation] = useState<LatLng | null>(null);
   const [editDistance, setEditDistance] = useState<number | null>(null);
 
@@ -129,7 +135,13 @@ export default function ReportsPage() {
   function executeEdit(plan: VillagePlan) {
     setEditingPlan(plan);
     setEditStart(plan.start_lat && plan.start_lng ? { lat: plan.start_lat, lng: plan.start_lng } : null);
+    setEditStartLat(plan.start_lat ? plan.start_lat.toString() : '');
+    setEditStartLng(plan.start_lng ? plan.start_lng.toString() : '');
+
     setEditEnd(plan.end_lat && plan.end_lng ? { lat: plan.end_lat, lng: plan.end_lng } : null);
+    setEditEndLat(plan.end_lat ? plan.end_lat.toString() : '');
+    setEditEndLng(plan.end_lng ? plan.end_lng.toString() : '');
+
     setEditLocation(plan.location_lat && plan.location_lng ? { lat: plan.location_lat, lng: plan.location_lng } : null);
     setEditDistance(plan.distance_m); 
     
@@ -183,26 +195,39 @@ export default function ReportsPage() {
     if (isRoad) {
       if (picking === 'start') { 
         setEditStart(p); 
+        setEditStartLat(p.lat.toString());
+        setEditStartLng(p.lng.toString());
         setPicking('end'); 
       }
       else if (picking === 'waypoint') { 
         setEditWaypoints([...editWaypoints, p]); 
-        // ⭐ ถ้าปักจุดผ่าน ให้สลับเป็นโหมดวาดเองเพื่อให้เส้นวิ่งผ่านจุด
         if (!drawMode) setDrawMode(true); 
       }
       else { 
         setEditEnd(p); 
+        setEditEndLat(p.lat.toString());
+        setEditEndLng(p.lng.toString());
       }
     } else { 
       setEditLocation(p); 
     }
   }
 
+  // ⭐ ฟังก์ชันแปลงค่าจากช่องกรอกพิกัด
+  function applyCoords(type: 'start' | 'end', latStr: string, lngStr: string) {
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      if (type === 'start') setEditStart({ lat, lng });
+      else setEditEnd({ lat, lng });
+    }
+  }
+
   // ⭐ ฟังก์ชันล้างจุดทั้งหมด
   function handleClearAllPoints() {
     if (confirm('คุณต้องการล้างจุดทั้งหมดและเริ่มวาดใหม่ใช่หรือไม่?')) {
-      setEditStart(null);
-      setEditEnd(null);
+      setEditStart(null); setEditStartLat(''); setEditStartLng('');
+      setEditEnd(null); setEditEndLat(''); setEditEndLng('');
       setEditWaypoints([]);
       setEditLocation(null);
       setEditDistance(null);
@@ -604,9 +629,22 @@ export default function ReportsPage() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setPicking('start')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 เริ่มต้น</button>
-                      <button type="button" onClick={() => setPicking('end')} className={`flex-1 text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>📍 สิ้นสุด</button>
+                    {/* ⭐ ช่องกรอกพิกัดจุดเริ่มต้น */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="number" step="any" placeholder="Lat" value={editStartLat} onChange={(e) => { setEditStartLat(e.target.value); applyCoords('start', e.target.value, editStartLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                        <input type="number" step="any" placeholder="Lng" value={editStartLng} onChange={(e) => { setEditStartLng(e.target.value); applyCoords('start', editStartLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                      </div>
+                    </div>
+
+                    {/* ⭐ ช่องกรอกพิกัดจุดสิ้นสุด */}
+                    <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="number" step="any" placeholder="Lat" value={editEndLat} onChange={(e) => { setEditEndLat(e.target.value); applyCoords('end', e.target.value, editEndLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
+                        <input type="number" step="any" placeholder="Lng" value={editEndLng} onChange={(e) => { setEditEndLng(e.target.value); applyCoords('end', editEndLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
+                      </div>
                     </div>
 
                     <div className="flex gap-2">
@@ -614,7 +652,6 @@ export default function ReportsPage() {
                         {editWaypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
                       </button>
                       
-                      {/* ⭐ ปุ่มล้างจุดทั้งหมด */}
                       {(editStart || editEnd || editWaypoints.length > 0) && (
                         <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-xs">
                           🗑️ ล้างจุด
@@ -633,15 +670,21 @@ export default function ReportsPage() {
                     waypoints={editWaypoints}
                     drawMode={drawMode}
                     onPick={handleMapPick}
-                    onDrag={(which, p) => { if (which === 'start') setEditStart(p); else setEditEnd(p); }}
+                    onDrag={(which, p) => { 
+                      if (which === 'start') { 
+                        setEditStart(p); setEditStartLat(p.lat.toString()); setEditStartLng(p.lng.toString()); 
+                      } else { 
+                        setEditEnd(p); setEditEndLat(p.lat.toString()); setEditEndLng(p.lng.toString()); 
+                      } 
+                    }}
                     onWaypointDrag={(idx, p) => {
                       const newWp = [...editWaypoints]; newWp[idx] = p; setEditWaypoints(newWp);
                     }}
                     onWaypointDelete={(idx) => {
                       setEditWaypoints(editWaypoints.filter((_, i) => i !== idx));
                     }}
-                    onClearStart={() => setEditStart(null)}
-                    onClearEnd={() => setEditEnd(null)}
+                    onClearStart={() => { setEditStart(null); setEditStartLat(''); setEditStartLng(''); }}
+                    onClearEnd={() => { setEditEnd(null); setEditEndLat(''); setEditEndLng(''); }}
                     onClearLocation={() => setEditLocation(null)}
                     onRouteUpdate={(route) => setEditRoutePath(route)}
                     roadName={editingPlan.plan_name}
