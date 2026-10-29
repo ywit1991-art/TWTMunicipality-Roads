@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { getRoadDistance, LatLng } from '@/lib/osrm';
+import { LatLng } from '@/lib/osrm';
 
 const MapPicker = nextDynamic(() => import('@/components/MapPicker'), { 
   ssr: false,
@@ -42,7 +42,6 @@ export default function SurveyPage() {
 
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
-  // ⭐ State สำหรับช่องกรอกพิกัด
   const [startLat, setStartLat] = useState('');
   const [startLng, setStartLng] = useState('');
   const [endLat, setEndLat] = useState('');
@@ -123,7 +122,6 @@ export default function SurveyPage() {
     }
   }
 
-  // ⭐ ฟังก์ชันแปลงค่าจากช่องกรอก
   function applyCoords(type: 'start' | 'end', latStr: string, lngStr: string) {
     const lat = parseFloat(latStr);
     const lng = parseFloat(lngStr);
@@ -168,6 +166,9 @@ export default function SurveyPage() {
     if (isOtherWork && !location) {
       return setAlertInfo({ title: 'พิกัดไม่ครบถ้วน', message: 'กรุณาระบุ "ตำแหน่งที่ตั้ง" บนแผนที่ก่อนครับ', type: 'error' });
     }
+    if (readiness === 'ไม่พร้อม' && !problem.trim()) {
+      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณาระบุ "ปัญหาที่ไม่พร้อม" ด้วยครับ', type: 'error' });
+    }
 
     setLoading(true);
 
@@ -205,126 +206,108 @@ export default function SurveyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/50 pb-10">
+    <div className="min-h-screen pb-20 bg-slate-50/50 font-sans">
       
-      <header className="flex-shrink-0 bg-gradient-to-r from-blue-800 to-indigo-900 px-4 py-4 md:px-6 md:py-5 text-white shadow-lg z-10 relative">
-        <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="text-2xl md:text-3xl bg-white/20 p-1.5 md:p-2 rounded-xl backdrop-blur-sm shrink-0">📋</span> 
+      {/* ⭐ Header สไตล์เดียวกับหน้ารายงาน */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 text-white p-2 rounded-xl shadow-inner">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
             <div>
-              <h1 className="text-lg md:text-2xl font-black tracking-tight leading-tight">
-                ระบบสำรวจแผนพัฒนาหมู่บ้าน
-              </h1>
-              <p className="text-blue-200 mt-0.5 text-xs md:text-sm font-medium leading-tight">
-                เทศบาลตำบลท่าวังทอง (พย.11)
-              </p>
+              <h1 className="text-lg md:text-xl font-bold text-slate-800 leading-tight">ระบบสำรวจแผนพัฒนา</h1>
+              <p className="text-xs md:text-sm text-slate-500 font-medium">เทศบาลตำบลท่าวังทอง (พย.11)</p>
             </div>
           </div>
-          <Link href="/reports" className="shrink-0 rounded-xl bg-white/10 px-3 py-2 md:px-5 md:py-2.5 text-sm md:text-base font-bold hover:bg-white/20 transition shadow-sm border border-white/10 backdrop-blur-sm flex items-center gap-1.5 md:gap-2">
-            📊 <span className="hidden md:inline">ดูรายงาน</span>
+          <Link href="/reports" className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span className="hidden md:inline">ดูรายงาน</span>
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl p-4 md:p-6 mt-2 md:mt-0">
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 md:gap-6">
+      <main className="mx-auto max-w-7xl p-4 md:p-6 mt-2 md:mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           
-          <div className="lg:col-span-4 xl:col-span-3 rounded-3xl bg-white p-5 md:p-6 shadow-sm border border-slate-200">
-            <div className="space-y-5 md:space-y-5 pb-6">
+          {/* ⭐ ฟอร์มกรอกข้อมูล (การ์ดสีขาวสะอาดตา) */}
+          <div className="lg:col-span-5 xl:col-span-4 rounded-3xl bg-white p-5 md:p-6 shadow-sm border border-slate-200">
+            <form onSubmit={handleSubmit} className="space-y-5">
               
+              {/* ข้อมูลพื้นฐาน */}
               <div>
-                <label className="mb-2 block text-lg font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
+                <label className="mb-2 block text-sm font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
+                <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl bg-slate-50 border-none px-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                   <option value="">-- เลือกหมู่บ้าน --</option>
                   {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="mb-2 block text-lg font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
-                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                <label className="mb-2 block text-sm font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
+                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl bg-slate-50 border-none px-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
               </div>
 
               <div>
-                <label className="mb-2 block text-lg font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
-                <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 px-4 py-4 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
+                <label className="mb-2 block text-sm font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
+                <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl bg-slate-50 border-none px-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer appearance-none">
                   <option value="">-- เลือกประเภท --</option>
                   {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
 
+              {/* ส่วนงานถนน */}
               {isRoadWork && (
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
                   
                   <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
                     <span className="text-sm font-bold text-slate-700">โหมด:</span>
                     <div className="flex bg-slate-100 p-1 rounded-lg">
-                      <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
-                      <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
+                      <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
+                      <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
                     </div>
                   </div>
 
-                  {/* ⭐ เพิ่มช่องกรอกพิกัดจุดเริ่มต้น */}
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex justify-between items-center mb-2">
-                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
-                    </div>
+                    <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
                     <div className="grid grid-cols-2 gap-2">
-                      <input 
-                        type="number" step="any" placeholder="ละติจูด (Lat)" 
-                        value={startLat} 
-                        onChange={(e) => { setStartLat(e.target.value); applyCoords('start', e.target.value, startLng); }}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" 
-                      />
-                      <input 
-                        type="number" step="any" placeholder="ลองจิจูด (Lng)" 
-                        value={startLng} 
-                        onChange={(e) => { setStartLng(e.target.value); applyCoords('start', startLat, e.target.value); }}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" 
-                      />
+                      <input type="number" step="any" placeholder="Lat" value={startLat} onChange={(e) => { setStartLat(e.target.value); applyCoords('start', e.target.value, startLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                      <input type="number" step="any" placeholder="Lng" value={startLng} onChange={(e) => { setStartLng(e.target.value); applyCoords('start', startLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
                     </div>
                   </div>
 
-                  {/* ⭐ เพิ่มช่องกรอกพิกัดจุดสิ้นสุด */}
                   <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex justify-between items-center mb-2">
-                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
-                    </div>
+                    <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
                     <div className="grid grid-cols-2 gap-2">
-                      <input 
-                        type="number" step="any" placeholder="ละติจูด (Lat)" 
-                        value={endLat} 
-                        onChange={(e) => { setEndLat(e.target.value); applyCoords('end', e.target.value, endLng); }}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" 
-                      />
-                      <input 
-                        type="number" step="any" placeholder="ลองจิจูด (Lng)" 
-                        value={endLng} 
-                        onChange={(e) => { setEndLng(e.target.value); applyCoords('end', endLat, e.target.value); }}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" 
-                      />
+                      <input type="number" step="any" placeholder="Lat" value={endLat} onChange={(e) => { setEndLat(e.target.value); applyCoords('end', e.target.value, endLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
+                      <input type="number" step="any" placeholder="Lng" value={endLng} onChange={(e) => { setEndLng(e.target.value); applyCoords('end', endLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
                     </div>
                   </div>
 
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                    <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-xs px-2 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
                       {waypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
                     </button>
                     {(start || end || waypoints.length > 0) && (
-                      <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2.5 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-sm">
+                      <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-4 py-2.5 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-xs">
                         🗑️ ล้างจุด
                       </button>
                     )}
                   </div>
+                  {picking === 'waypoint' && <p className="text-[10px] text-amber-600 font-bold text-center animate-pulse">* คลิกแผนที่เพื่อเพิ่มจุดผ่าน</p>}
 
                   <div className="flex gap-3 pt-1">
                     <div className={`flex-1 rounded-xl p-3 border shadow-sm ${drawMode ? 'bg-orange-50 border-orange-200' : 'bg-white border-blue-200'}`}>
-                      <div className={`text-sm font-bold mb-1 ${drawMode ? 'text-orange-600' : 'text-slate-500'}`}>ระยะทาง</div>
-                      <div className={`font-black text-xl ${drawMode ? 'text-orange-600' : 'text-blue-600'}`}>{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
+                      <div className={`text-xs font-bold mb-1 ${drawMode ? 'text-orange-600' : 'text-slate-500'}`}>ระยะทาง</div>
+                      <div className={`font-black text-lg ${drawMode ? 'text-orange-600' : 'text-blue-600'}`}>{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-bold text-slate-600 mb-1.5">ความกว้าง (ม.)</label>
-                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-lg border-none bg-slate-50 px-3 py-3 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                      <label className="block text-xs font-bold text-slate-600 mb-1.5">ความกว้าง (ม.)</label>
+                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-medium outline-none focus:border-blue-500 transition" />
                     </div>
                   </div>
                 </div>
@@ -334,43 +317,61 @@ export default function SurveyPage() {
                 <div className="space-y-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-base font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
-                      <span className="text-sm font-bold bg-white px-2 py-1 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
+                      <span className="text-sm font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
+                      <span className="text-xs font-bold bg-white px-2 py-1 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-1.5">รายละเอียด</label>
-                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-xl border-none bg-slate-50 px-3 py-3 text-lg font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5">รายละเอียด</label>
+                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-xl bg-white border border-slate-300 px-3 py-3 text-sm font-medium outline-none focus:border-blue-500 transition" />
                   </div>
                 </div>
               )}
 
+              {/* ⭐ เปลี่ยนปุ่ม พร้อม/ไม่พร้อม เป็นปุ่มกดสไตล์เดียวกับหน้ารายงาน */}
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                <label className="mb-3 block text-lg font-bold text-slate-700">ความพร้อม</label>
-                <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 transition">
-                    <input type="radio" checked={readiness === 'พร้อม'} onChange={() => setReadiness('พร้อม')} className="h-6 w-6 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                    <span className="text-lg font-bold text-slate-700">✅ พร้อม</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-red-400 transition">
-                    <input type="radio" checked={readiness === 'ไม่พร้อม'} onChange={() => setReadiness('ไม่พร้อม')} className="h-6 w-6 text-red-600 focus:ring-red-500 cursor-pointer" />
-                    <span className="text-lg font-bold text-slate-700">❌ ไม่พร้อม</span>
-                  </label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">ความพร้อม</label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setReadiness('พร้อม')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                      readiness === 'พร้อม'
+                        ? 'bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-200'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    พร้อม
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReadiness('ไม่พร้อม')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                      readiness === 'ไม่พร้อม'
+                        ? 'bg-red-500 text-white border-red-600 ring-2 ring-red-200'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    ไม่พร้อม
+                  </button>
                 </div>
                 {readiness === 'ไม่พร้อม' && (
-                  <div className="mt-4 animate-in fade-in slide-in-from-top-2">
-                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border-none bg-red-50 px-4 py-4 text-lg font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
+                  <div className="animate-in fade-in slide-in-from-top-2">
+                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
                   </div>
                 )}
               </div>
 
-              <button type="submit" onClick={handleSubmit} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-xl font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-base font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
                 {loading ? '⏳ กำลังบันทึก...' : '💾 ส่งบันทึกข้อมูล'}
               </button>
-            </div>
+            </form>
           </div>
 
-          <div className="lg:col-span-6 xl:col-span-7 h-[50vh] md:h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-6 rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
+          {/* ⭐ แผนที่ (ติดด้านข้างเมื่ออยู่บนคอม) */}
+          <div className="lg:col-span-5 xl:col-span-6 h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-24 rounded-3xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden">
             <div className="w-full h-full rounded-2xl overflow-hidden relative">
                <MapPicker
                 mode={isOtherWork ? 'single' : 'double'}
@@ -396,6 +397,7 @@ export default function SurveyPage() {
         </div>
       </main>
 
+      {/* Modal แจ้งเตือน (เหมือนเดิม) */}
       {alertInfo && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -408,13 +410,14 @@ export default function SurveyPage() {
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
             <p className="text-base text-slate-500 mb-6">{alertInfo.message}</p>
-            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-4 text-base font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
           </div>
         </div>
       )}
 
+      {/* Success Modal */}
       {successModalData && (
         <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -426,12 +429,12 @@ export default function SurveyPage() {
             <h3 className="text-2xl font-black text-slate-800 mb-2">บันทึกสำเร็จ!</h3>
             <p className="text-base text-slate-500 mb-6">ข้อมูลแผนพัฒนาถูกบันทึกลงระบบเรียบร้อยแล้ว</p>
             <div className="w-full rounded-xl bg-slate-50 p-4 border border-slate-200 mb-6 text-left space-y-1">
-              <div className="text-sm font-bold text-slate-400">หมู่บ้าน</div>
-              <div className="font-bold text-slate-800 text-lg mb-2">{successModalData.village}</div>
-              <div className="text-sm font-bold text-slate-400">ชื่อแผน</div>
-              <div className="font-bold text-slate-800 text-lg truncate">{successModalData.planName}</div>
+              <div className="text-xs font-bold text-slate-400">หมู่บ้าน</div>
+              <div className="font-bold text-slate-800 text-base mb-2">{successModalData.village}</div>
+              <div className="text-xs font-bold text-slate-400">ชื่อแผน</div>
+              <div className="font-bold text-slate-800 text-base truncate">{successModalData.planName}</div>
             </div>
-            <button onClick={() => setSuccessModalData(null)} className="w-full rounded-xl bg-emerald-500 py-4 text-base font-bold text-white hover:bg-emerald-600 transition shadow-md">
+            <button onClick={() => setSuccessModalData(null)} className="w-full rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-white hover:bg-emerald-600 transition shadow-md">
               ตกลง
             </button>
           </div>
