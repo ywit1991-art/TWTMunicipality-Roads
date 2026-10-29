@@ -22,7 +22,8 @@ export type VillagePlan = {
   readiness: string;
   problem: string | null;
   created_at: string;
-  route_path?: [number, number][] | null; // ⭐ เพิ่ม type สำหรับเส้นทาง
+  waypoints?: { lat: number; lng: number }[] | null; // ⭐ เพิ่มบรรทัดนี้
+  route_path?: [number, number][] | null;            // ⭐ เพิ่มบรรทัดนี้
 };
 
 const TYPE_COLORS: Record<string, string> = {
