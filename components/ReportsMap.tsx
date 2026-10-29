@@ -22,8 +22,8 @@ export type VillagePlan = {
   readiness: string;
   problem: string | null;
   created_at: string;
-  waypoints?: { lat: number; lng: number }[] | null; // ⭐ เพิ่มบรรทัดนี้
-  route_path?: [number, number][] | null;            // ⭐ เพิ่มบรรทัดนี้
+  waypoints?: { lat: number; lng: number }[] | null; 
+  route_path?: [number, number][] | null;            
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -75,28 +75,35 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
   const [isSatellite, setIsSatellite] = useState(true);
 
+  // ⭐ สร้าง string เพื่อเช็กว่ามีการอัปเดตเส้นทางใหม่ไหม
+  const plansDataString = JSON.stringify(plans.map(p => ({ id: p.id, path: p.route_path })));
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       for (const plan of plans) {
         if (plan.start_lat && plan.start_lng && plan.end_lat && plan.end_lng) {
-          if (!routes[plan.id]) {
-            // ⭐ ถ้ามี route_path ที่เซฟไว้ ให้ใช้เลย ไม่ต้อง fetch OSRM
-            if (plan.route_path && plan.route_path.length > 0) {
-              setRoutes((prev) => ({ ...prev, [plan.id]: plan.route_path! }));
-            } else {
-              // ถ้าเป็นข้อมูลเก่าที่ไม่มี route_path ให้ fetch จาก OSRM
-              const r = await fetchRoute(plan.start_lat, plan.start_lng, plan.end_lat, plan.end_lng);
-              if (!mounted) return;
-              setRoutes((prev) => ({ ...prev, [plan.id]: r }));
-              await new Promise((res) => setTimeout(res, 1100)); // หน่วง OSRM
-            }
+          // ⭐ ถ้าใน DB มี route_path ให้ใช้ค่านั้นเสมอ (ไม่สนใจแคชเก่า)
+          if (plan.route_path && plan.route_path.length > 0) {
+            setRoutes((prev) => {
+              if (JSON.stringify(prev[plan.id]) !== JSON.stringify(plan.route_path)) {
+                return { ...prev, [plan.id]: plan.route_path! };
+              }
+              return prev;
+            });
+          } 
+          // ถ้าไม่มี route_path และยังไม่เคยดึง ให้ดึงจาก OSRM
+          else if (!routes[plan.id]) {
+            const r = await fetchRoute(plan.start_lat, plan.start_lng, plan.end_lat, plan.end_lng);
+            if (!mounted) return;
+            setRoutes((prev) => ({ ...prev, [plan.id]: r }));
+            await new Promise((res) => setTimeout(res, 1100));
           }
         }
       }
     })();
     return () => { mounted = false; };
-  }, [plans.length]);
+  }, [plansDataString]);
 
   const bounds: [[number, number], [number, number]] = [
     [19.100, 99.850], 
@@ -118,7 +125,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
           onClick={() => setIsSatellite(!isSatellite)}
           className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
         >
-          {isSatellite ? '🗺️ สลับเป็นแผนที่ถนน' : '🛰️ สลับเป็นดาวเทียม'}
+          {isSatellite ? '🗺️ แผนที่ถนน' : '🛰️ ดาวเทียม'}
         </button>
       </div>
 
