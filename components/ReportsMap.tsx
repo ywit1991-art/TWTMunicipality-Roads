@@ -186,17 +186,14 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                   },
                 }}
               >
-                {/* ⭐ Tooltip (ป้ายที่ขึ้นตอนเอาเมาส์ชี้) */}
+                {/* ⭐ Tooltip ที่บังคับให้แสดงระยะทางเสมอ */}
                 <Tooltip sticky>
                   <div className="text-center font-sans p-1">
                     <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
                     <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
-                    {/* ⭐ ใส่ระยะทางตรงนี้ */}
-                    {plan.distance_m != null && (
-                      <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-50 px-2 py-0.5 rounded-full inline-block">
-                        📏 {(plan.distance_m / 1000).toFixed(3)} กม.
-                      </div>
-                    )}
+                    <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-100 px-2 py-1 rounded-md inline-block">
+                      📏 ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                    </div>
                   </div>
                 </Tooltip>
               </Polyline>
@@ -204,14 +201,12 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
               {/* จุดเริ่มต้น */}
               <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
-                  <div className="text-center font-sans p-1 min-w-[140px]">
+                  <div className="text-center font-sans p-1 min-w-[150px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    {plan.distance_m != null && (
-                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
-                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
-                      </div>
-                    )}
+                    <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
+                      ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                    </div>
                     <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
                     <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                   </div>
@@ -221,14 +216,12 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
               {/* จุดสิ้นสุด */}
               <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
-                  <div className="text-center font-sans p-1 min-w-[140px]">
+                  <div className="text-center font-sans p-1 min-w-[150px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    {plan.distance_m != null && (
-                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-50 py-1 rounded">
-                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
-                      </div>
-                    )}
+                    <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
+                      ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                    </div>
                     <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
                     <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                   </div>
