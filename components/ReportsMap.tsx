@@ -75,7 +75,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
   const [isSatellite, setIsSatellite] = useState(true);
 
-  // ⭐ สร้าง string เพื่อเช็กว่ามีการอัปเดตเส้นทางใหม่ไหม
   const plansDataString = JSON.stringify(plans.map(p => ({ id: p.id, path: p.route_path })));
 
   useEffect(() => {
@@ -83,7 +82,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
     (async () => {
       for (const plan of plans) {
         if (plan.start_lat && plan.start_lng && plan.end_lat && plan.end_lng) {
-          // ⭐ ถ้าใน DB มี route_path ให้ใช้ค่านั้นเสมอ (ไม่สนใจแคชเก่า)
           if (plan.route_path && plan.route_path.length > 0) {
             setRoutes((prev) => {
               if (JSON.stringify(prev[plan.id]) !== JSON.stringify(plan.route_path)) {
@@ -92,7 +90,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
               return prev;
             });
           } 
-          // ถ้าไม่มี route_path และยังไม่เคยดึง ให้ดึงจาก OSRM
           else if (!routes[plan.id]) {
             const r = await fetchRoute(plan.start_lat, plan.start_lng, plan.end_lat, plan.end_lng);
             if (!mounted) return;
@@ -113,8 +110,8 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const btnStyle: React.CSSProperties = {
     display: 'block', width: '100%', textAlign: 'center',
     backgroundColor: '#1e293b', color: '#ffffff',
-    padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-    textDecoration: 'none', marginTop: '10px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold',
+    textDecoration: 'none', marginTop: '6px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
   };
 
   return (
@@ -125,7 +122,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
           onClick={() => setIsSatellite(!isSatellite)}
           className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
         >
-          {isSatellite ? '🗺️ แผนที่ถนน' : '🛰️ ดาวเทียม'}
+          {isSatellite ? '🗺️ สลับเป็นแผนที่ถนน' : '🛰️ สลับเป็นดาวเทียม'}
         </button>
       </div>
 
@@ -136,6 +133,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
         maxZoom={20}
         maxBounds={bounds}
         maxBoundsViscosity={1.0}
+        zoomControl={true}
         style={{ height: '100%', width: '100%' }}
       >
         {isSatellite ? (
@@ -167,16 +165,42 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
           return (
             <div key={plan.id}>
-              <Polyline positions={route} pathOptions={{ color, weight: 6, opacity: 0.9, lineCap: 'round' }}>
+              {/* ⭐ ลดความหนาเส้นลง + เพิ่ม Opacity + เพิ่ม Hover Effect */}
+              <Polyline 
+                positions={route} 
+                pathOptions={{ 
+                  color, 
+                  weight: 4, // บางลง
+                  opacity: 0.7, // โปร่งแสงเพื่อให้เห็นเส้นที่ซ้อนกัน
+                  lineCap: 'round',
+                }} 
+                eventHandlers={{
+                  mouseover: (e) => {
+                    const layer = e.target;
+                    layer.setStyle({ weight: 7, opacity: 1 }); // Hover แล้วหนาขึ้น ชัดขึ้น
+                    layer.bringToFront(); // ดึงขึ้นมาบนสุด
+                  },
+                  mouseout: (e) => {
+                    const layer = e.target;
+                    layer.setStyle({ weight: 4, opacity: 0.7 }); // กลับเป็นเหมือนเดิม
+                  },
+                }}
+              >
                 <Tooltip sticky>
                   <div className="text-center font-sans">
                     <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
                     <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
+                    {/* ⭐ เพิ่มระยะทางใน Tooltip */}
+                    {plan.distance_m && (
+                      <div className="text-xs font-bold text-blue-600 mt-1">
+                        ระยะทาง: {(plan.distance_m / 1000).toFixed(3)} กม.
+                      </div>
+                    )}
                   </div>
                 </Tooltip>
               </Polyline>
 
-              <CircleMarker center={startPoint} radius={8} pathOptions={{ color: 'white', weight: 3, fillColor: color, fillOpacity: 1 }}>
+              <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
@@ -187,7 +211,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                 </Popup>
               </CircleMarker>
 
-              <CircleMarker center={endPoint} radius={8} pathOptions={{ color: 'white', weight: 3, fillColor: color, fillOpacity: 1 }}>
+              <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                 <Popup>
                   <div className="text-center font-sans p-1 min-w-[140px]">
                     <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>

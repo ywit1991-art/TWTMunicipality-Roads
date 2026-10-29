@@ -26,3 +26,26 @@ body {
   outline: none !important;
   border: none !important;
 }
+
+
+/* ลดขนาดปุ่ม Zoom ของ Leaflet */
+.leaflet-control-zoom a {
+  width: 28px !important;
+  height: 28px !important;
+  line-height: 26px !important;
+  font-size: 18px !important;
+}
+
+/* ปรับแต่ง Tooltip ให้สวยงาม */
+.leaflet-tooltip {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  padding: 8px 12px !important;
+  color: #1e293b !important;
+  font-family: 'Noto Sans Thai', sans-serif !important;
+}
+.leaflet-tooltip-top:before {
+  border-top-color: rgba(255, 255, 255, 0.95) !important;
+}
