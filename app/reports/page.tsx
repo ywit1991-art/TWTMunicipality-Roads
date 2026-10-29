@@ -136,8 +136,8 @@ export default function ReportsPage() {
     setEditWaypoints(plan.waypoints || []);
     setEditRoutePath(plan.route_path || []);
     
-    // ⭐ ถ้าเคยมีจุดผ่าน ให้เปิดโหมดวาดเองอัตโนมัติ เพื่อไม่ให้โดน OSRM ทับ
-    if (plan.waypoints && plan.waypoints.length > 0) {
+    // ⭐ ถ้าข้อมูลเดิมมีเส้นทางที่วาดไว้ (route_path) หรือมีจุดผ่าน ให้เปิดโหมดวาดเองอัตโนมัติ
+    if ((plan.route_path && plan.route_path.length > 0) || (plan.waypoints && plan.waypoints.length > 0)) {
       setDrawMode(true);
     } else {
       setDrawMode(false); 
