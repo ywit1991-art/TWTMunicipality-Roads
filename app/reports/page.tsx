@@ -130,7 +130,11 @@ export default function ReportsPage() {
   }
 
   function executeEdit(plan: VillagePlan) {
-    setEditingPlan(plan);
+    // ⭐ แปลงค่าจาก DB แบบเก่า (พร้อม/ไม่พร้อม) ให้เป็นค่าใหม่
+    const mappedReadiness = plan.readiness === 'พร้อม' ? 'ไม่มีอุปสรรค' : plan.readiness === 'ไม่พร้อม' ? 'มีอุปสรรค' : plan.readiness;
+    const newPlan = { ...plan, readiness: mappedReadiness };
+
+    setEditingPlan(newPlan);
     setEditStart(plan.start_lat && plan.start_lng ? { lat: plan.start_lat, lng: plan.start_lng } : null);
     setEditStartLat(plan.start_lat ? plan.start_lat.toString() : '');
     setEditStartLng(plan.start_lng ? plan.start_lng.toString() : '');
@@ -259,7 +263,7 @@ export default function ReportsPage() {
         plan_name: editingPlan.plan_name, 
         plan_type: editingPlan.plan_type,
         readiness: editingPlan.readiness, 
-        problem: editingPlan.problem, 
+        problem: editingPlan.readiness === 'มีอุปสรรค' ? editingPlan.problem : null, // ⭐ เซฟค่าใหม่
         details: editingPlan.details, 
         width: editingPlan.width,
         start_lat: isRoad ? editStart?.lat : null, 
@@ -285,94 +289,83 @@ export default function ReportsPage() {
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50/50 font-sans">
+    <div className="min-h-screen pb-10 bg-slate-50">
       
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 text-white p-2 rounded-xl shadow-inner">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
+      <header className="flex-shrink-0 bg-white border-b border-slate-200 px-3 py-3 md:px-6 md:py-5 shadow-sm z-10 relative">
+        <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className="text-2xl md:text-3xl bg-blue-50 text-blue-600 p-1.5 md:p-2 rounded-xl shrink-0">📊</span>
             <div>
-              <h1 className="text-lg md:text-xl font-bold text-slate-800 leading-tight">รายงานผลการสำรวจ</h1>
-              <p className="text-xs md:text-sm text-slate-500 font-medium">เทศบาลตำบลท่าวังทอง (พย.11)</p>
+              <h1 className="text-base md:text-2xl font-black tracking-tight leading-tight text-slate-800">
+                รายงานผลการสำรวจ
+              </h1>
+              <p className="text-blue-500 mt-0.5 text-[10px] md:text-sm font-medium leading-tight">
+                เทศบาลตำบลท่าวังทอง (พย.11)
+              </p>
             </div>
           </div>
-          <Link href="/" className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span className="hidden md:inline">กลับหน้าสำรวจ</span>
+          <Link href="/" className="shrink-0 rounded-xl bg-slate-100 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-200 transition shadow-sm flex items-center gap-1.5 md:gap-2">
+            <span>⬅️</span> <span className="hidden md:inline">กลับหน้าสำรวจ</span><span className="md:hidden">กลับ</span>
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl mt-6 px-4 space-y-6 md:space-y-8">
+      <main className="mx-auto max-w-7xl mt-4 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-6">
         
-        <div className="bg-white p-2 md:p-3 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
+        <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border-none bg-slate-50 py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition" />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 md:py-3 pl-11 pr-4 text-sm font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
           </div>
-          <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="rounded-xl border-none bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+          <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
             <option value="ทั้งหมด">🏘️ ทุกหมู่บ้าน</option>
             {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="rounded-xl border-none bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer">
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
             <option value="ทั้งหมด">🛠️ ทุกประเภทงาน</option>
             {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           {hasFilter && (
-            <button onClick={clearFilters} className="rounded-xl bg-red-50 text-red-600 px-5 py-3 text-sm font-bold hover:bg-red-100 transition whitespace-nowrap">✕ ล้างค่า</button>
+            <button onClick={clearFilters} className="rounded-xl bg-red-50 text-red-600 px-5 py-2.5 md:py-3 text-sm font-bold hover:bg-red-100 transition whitespace-nowrap border border-red-100">✕ ล้างค่า</button>
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3 md:gap-6">
-          <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-500 to-blue-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
-            <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-            </div>
-            <div className="relative z-10">
-              <div className="text-xs md:text-sm font-semibold text-blue-100 mb-1">แผนที่พบ</div>
-              <div className="text-3xl md:text-5xl font-black">{filteredPlans.length}</div>
-              <div className="text-[10px] md:text-sm font-medium text-blue-100 mt-1">รายการ</div>
+        {/* ⭐ Stats Cards เปลี่ยนคำ */}
+        <div className="grid grid-cols-3 gap-2 md:gap-5">
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
+            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">📋</div>
+            <div className="relative">
+              <div className="text-xs md:text-sm font-bold text-blue-100 mb-1">แผนที่พบ</div>
+              <div className="text-2xl md:text-4xl font-black">{filteredPlans.length} <span className="text-sm font-medium text-blue-100 block md:inline">รายการ</span></div>
             </div>
           </div>
           
-          <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
-            <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-            </div>
-            <div className="relative z-10">
-              <div className="text-xs md:text-sm font-semibold text-emerald-100 mb-1">พร้อมดำเนินการ</div>
-              <div className="text-3xl md:text-5xl font-black">{filteredPlans.filter(p => p.readiness === 'พร้อม').length}</div>
-              <div className="text-[10px] md:text-sm font-medium text-emerald-100 mt-1">รายการ</div>
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
+            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">✅</div>
+            <div className="relative">
+              <div className="text-xs md:text-sm font-bold text-emerald-100 mb-1">ไม่มีอุปสรรค</div>
+              <div className="text-2xl md:text-4xl font-black">
+                {filteredPlans.filter(p => p.readiness === 'ไม่มีอุปสรรค' || p.readiness === 'พร้อม').length} 
+                <span className="text-sm font-medium text-emerald-100 block md:inline">รายการ</span>
+              </div>
             </div>
           </div>
 
-          <div className="group relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-red-500 to-red-700 p-4 md:p-6 text-white shadow-lg transition hover:shadow-xl hover:-translate-y-1">
-            <div className="absolute -right-6 -top-6 opacity-20 transition group-hover:scale-110 group-hover:rotate-12">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 md:h-32 md:w-32" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
-            </div>
-            <div className="relative z-10">
-              <div className="text-xs md:text-sm font-semibold text-red-100 mb-1">ไม่พร้อมดำเนินการ</div>
-              <div className="text-3xl md:text-5xl font-black">{filteredPlans.filter(p => p.readiness === 'ไม่พร้อม').length}</div>
-              <div className="text-[10px] md:text-sm font-medium text-red-100 mt-1">รายการ</div>
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-red-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
+            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">❌</div>
+            <div className="relative">
+              <div className="text-xs md:text-sm font-bold text-red-100 mb-1">มีอุปสรรค</div>
+              <div className="text-2xl md:text-4xl font-black">
+                {filteredPlans.filter(p => p.readiness === 'มีอุปสรรค' || p.readiness === 'ไม่พร้อม').length} 
+                <span className="text-sm font-medium text-red-100 block md:inline">รายการ</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white p-2 md:p-4 shadow-sm border border-slate-200">
-          <div className="p-2 md:p-0 mb-3 flex items-center gap-2">
-            <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-            </span>
+        <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
+          <div className="p-3 md:p-4 flex items-center gap-2">
+            <span className="text-xl md:text-2xl">🗺️</span>
             <h2 className="text-base md:text-lg font-bold text-slate-800">แผนที่รวมทุกเส้นทาง</h2>
           </div>
           <div className="rounded-2xl overflow-hidden h-[400px] md:h-[600px] relative z-0">
@@ -389,14 +382,10 @@ export default function ReportsPage() {
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
-              <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-              </span>
+              <span className="text-xl md:text-2xl">📋</span>
               <h2 className="text-base md:text-lg font-bold text-slate-800">รายการสำรวจ</h2>
             </div>
-            <span className="text-xs md:text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">พบ {filteredPlans.length} รายการ</span>
+            <span className="text-xs md:text-sm font-bold text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-lg">พบ {filteredPlans.length} รายการ</span>
           </div>
           
           {loading ? (
@@ -407,127 +396,103 @@ export default function ReportsPage() {
             <>
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
+                  <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
                     <tr>
                       <th className="px-6 py-4">หมู่บ้าน</th>
                       <th className="px-6 py-4">ชื่อแผน / ประเภท</th>
-                      <th className="px-6 py-4 text-center">ระยะทาง (กม.)</th>
-                      <th className="px-6 py-4 text-center">ความกว้าง (ม.)</th>
-                      <th className="px-6 py-4 text-center">ความพร้อม</th>
+                      <th className="px-6 py-4">ระยะทาง (กม.)</th>
+                      <th className="px-6 py-4">ความกว้าง (ม.)</th>
+                      <th className="px-6 py-4">สถานะอุปสรรค</th>
                       <th className="px-6 py-4 text-center">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredPlans.map((plan, index) => (
-                      <tr key={plan.id} className={`transition-colors hover:bg-blue-50/40 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
-                        <td className="px-6 py-4 font-black text-slate-700">{plan.village}</td>
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-800 text-base mb-1">{plan.plan_name}</div>
-                          <div className="text-xs font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md border border-slate-200">{plan.plan_type}</div>
-                          {plan.problem && <div className="text-xs text-red-600 mt-1.5 max-w-[200px] truncate font-bold bg-red-50 px-2 py-1 rounded-md border border-red-100" title={plan.problem}>⚠️ {plan.problem}</div>}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="inline-flex items-center gap-1 font-mono font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
-                            {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center font-bold text-slate-600">
-                          {plan.width ? plan.width : '-'}
-                        </td>
-                        
-                        {/* ⭐ ปุ่มความพร้อม (แก้ให้เป็น Outline เหมือนปุ่มแก้ไข) */}
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold shadow-sm border transition ${
-                            plan.readiness === 'พร้อม' 
-                              ? 'text-emerald-600 border-emerald-200 hover:bg-emerald-50' 
-                              : 'text-red-600 border-red-200 hover:bg-red-50'
-                          }`}>
-                            {plan.readiness === 'พร้อม' ? (
-                              <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> พร้อม</>
-                            ) : (
-                              <><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> ไม่พร้อม</>
-                            )}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex justify-center gap-2">
-                            <button onClick={() => requestAuth('edit', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 shadow-sm transition">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                              แก้ไข
-                            </button>
-                            <button onClick={() => requestAuth('delete', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 shadow-sm transition">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              ลบ
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredPlans.map((plan, index) => {
+                      // ⭐ แปลงค่าเก่าให้แสดงผลเป็นค่าใหม่
+                      const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
+                      return (
+                        <tr key={plan.id} className={`transition-colors hover:bg-blue-50/50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                          <td className="px-6 py-4 font-black text-slate-700">{plan.village}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-slate-800 text-base mb-1">{plan.plan_name}</div>
+                            <div className="text-xs font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md border border-slate-200">{plan.plan_type}</div>
+                            {plan.problem && <div className="text-xs text-red-600 mt-1 max-w-[200px] truncate font-bold bg-red-50 px-2 py-1 rounded-md border border-red-100" title={plan.problem}>⚠️ {plan.problem}</div>}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-blue-600 font-mono text-base">
+                            {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '-'}
+                          </td>
+                          <td className="px-6 py-4 font-bold text-slate-600">
+                            {plan.width ? plan.width : '-'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                              {isNoObstacle ? '✅ ไม่มีอุปสรรค' : '❌ มีอุปสรรค'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-2">
+                              <button onClick={() => requestAuth('edit', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 shadow-sm transition">✏️ แก้ไข</button>
+                              <button onClick={() => requestAuth('delete', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 shadow-sm transition">🗑️ ลบ</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              <div className="md:hidden flex flex-col gap-4 p-4 bg-slate-50/50">
-                {filteredPlans.map((plan) => (
-                  <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-                    <div className="flex justify-between items-start mb-2 gap-2">
-                      <div>
-                        <div className="text-xs font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md inline-block mb-1 border border-blue-100">{plan.village}</div>
-                        <div className="font-bold text-slate-800 text-base leading-tight">{plan.plan_name}</div>
+              <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
+                {filteredPlans.map((plan) => {
+                  const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
+                  return (
+                    <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div>
+                          <div className="text-xs font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block mb-1">{plan.village}</div>
+                          <div className="font-bold text-slate-800 text-sm leading-tight">{plan.plan_name}</div>
+                        </div>
+                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                          {isNoObstacle ? '✅ ไม่มีอุปสรรค' : '❌ มีอุปสรรค'}
+                        </span>
                       </div>
                       
-                      {/* ⭐ ปุ่มความพร้อมบนมือถือ (Outline) */}
-                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold shadow-sm border ${
-                        plan.readiness === 'พร้อม' 
-                          ? 'text-emerald-600 border-emerald-200' 
-                          : 'text-red-600 border-red-200'
-                      }`}>
-                        {plan.readiness === 'พร้อม' ? '✅ พร้อม' : '❌ ไม่พร้อม'}
-                      </span>
-                    </div>
-                    
-                    <div className="text-[11px] font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-200 mb-3">{plan.plan_type}</div>
-                    
-                    <div className="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100">
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-400 mb-0.5">ระยะทาง</div>
-                        <div className="text-sm font-black text-blue-600 font-mono">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '0.000 กม.'}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-400 mb-0.5">ความกว้าง</div>
-                        <div className="text-sm font-bold text-slate-700">{plan.width ? `${plan.width} ม.` : '-'}</div>
-                      </div>
-                      {plan.problem && (
-                        <div className="col-span-2 text-xs text-red-600 font-bold mt-1 bg-red-50 p-2 rounded border border-red-100">
-                          ⚠️ {plan.problem}
+                      <div className="text-[11px] font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-200 mb-3">{plan.plan_type}</div>
+                      
+                      <div className="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100 grid grid-cols-2 gap-2">
+                        <div className="text-xs text-slate-600 font-bold">
+                          <span className="text-slate-400 font-medium block">ระยะทาง</span> 
+                          <span className="font-mono text-blue-600 text-sm">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '-'}</span>
                         </div>
-                      )}
-                    </div>
+                        <div className="text-xs text-slate-600 font-bold">
+                          <span className="text-slate-400 font-medium block">ความกว้าง</span> 
+                          <span className="text-slate-800 text-sm">{plan.width ? `${plan.width} ม.` : '-'}</span>
+                        </div>
+                        {plan.problem && (
+                          <div className="col-span-2 text-xs text-red-600 font-bold mt-1">
+                            ⚠️ {plan.problem}
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex gap-2">
-                      <button onClick={() => requestAuth('edit', plan)} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-amber-50 py-2.5 text-xs font-bold text-amber-600 border border-amber-200 active:bg-amber-100 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        แก้ไข
-                      </button>
-                      <button onClick={() => requestAuth('delete', plan)} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-red-50 py-2.5 text-xs font-bold text-red-600 border border-red-200 active:bg-red-100 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        ลบ
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => requestAuth('edit', plan)} className="flex-1 rounded-xl bg-amber-50 py-2 text-xs font-bold text-amber-600 border border-amber-200 active:bg-amber-100 transition">✏️ แก้ไข</button>
+                        <button onClick={() => requestAuth('delete', plan)} className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-600 border border-red-200 active:bg-red-100 transition">🗑️ ลบ</button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
         </div>
       </main>
 
+      {/* Modals... (Auth, Delete) */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl shadow-inner text-amber-500">🔒</div>
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl shadow-inner">🔒</div>
             <h3 className="text-xl font-bold text-slate-800 mb-1">ยืนยันสิทธิ์การเข้าถึง</h3>
             <p className="text-sm text-slate-500 mb-6">กรุณากรอกรหัสผ่านเพื่อ{pendingAction?.type === 'edit' ? 'แก้ไข' : 'ลบ'}ข้อมูลนี้</p>
             
@@ -546,7 +511,7 @@ export default function ReportsPage() {
             
             {authError && <p className="mt-2 text-sm font-bold text-red-500 animate-in slide-in-from-top-1">{authError}</p>}
             
-            <div className="mt-4 text-xs text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg">
+            <div className="mt-3 text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
               💡 รหัสสำหรับทดสอบคือ 55555
             </div>
 
@@ -572,7 +537,7 @@ export default function ReportsPage() {
               <span className="font-bold text-slate-800 text-base">"{planToDelete.plan_name}"</span> <br />
               ใช่หรือไม่?
             </p>
-            <p className="text-xs text-red-500 font-bold bg-red-50 px-3 py-2 rounded-xl mb-6 w-full border border-red-100">
+            <p className="text-xs text-red-500 font-bold bg-red-50 px-3 py-1.5 rounded-lg mb-6 w-full">
               ⚠️ ข้อมูลนี้จะหายไปถาวรและไม่สามารถกู้คืนได้
             </p>
 
@@ -584,6 +549,7 @@ export default function ReportsPage() {
         </div>
       )}
 
+      {/* Modal แก้ไข */}
       {editingPlan && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
@@ -636,35 +602,38 @@ export default function ReportsPage() {
                   </div>
                 )}
 
+                {/* ⭐ เปลี่ยนปุ่มเป็น ไม่มีอุปสรรค / มีอุปสรรค ในหน้าแก้ไข */}
                 <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-                  <label className="mb-2 block text-sm font-bold text-slate-700">ความพร้อม</label>
-                  <div className="flex gap-2">
+                  <label className="mb-2 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
+                  <div className="flex gap-3 mb-3">
                     <button
                       type="button"
-                      onClick={() => setEditingPlan({...editingPlan, readiness: 'พร้อม'})}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
-                        editingPlan.readiness === 'พร้อม'
-                          ? 'bg-emerald-500 text-white border-emerald-600'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      onClick={() => setEditingPlan({...editingPlan, readiness: 'ไม่มีอุปสรรค'})}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                        editingPlan.readiness === 'ไม่มีอุปสรรค'
+                          ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100'
+                          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      ✅ พร้อม
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      ไม่มีอุปสรรค
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditingPlan({...editingPlan, readiness: 'ไม่พร้อม'})}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
-                        editingPlan.readiness === 'ไม่พร้อม'
-                          ? 'bg-red-500 text-white border-red-600'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      onClick={() => setEditingPlan({...editingPlan, readiness: 'มีอุปสรรค'})}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                        editingPlan.readiness === 'มีอุปสรรค'
+                          ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100'
+                          : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      ❌ ไม่พร้อม
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                      มีอุปสรรค
                     </button>
                   </div>
-                  {editingPlan.readiness === 'ไม่พร้อม' && (
-                    <div className="mt-3">
-                      <input type="text" value={editingPlan.problem || ''} onChange={(e) => setEditingPlan({...editingPlan, problem: e.target.value})} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm outline-none focus:border-red-500" />
+                  {editingPlan.readiness === 'มีอุปสรรค' && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                      <input type="text" value={editingPlan.problem || ''} onChange={(e) => setEditingPlan({...editingPlan, problem: e.target.value})} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm outline-none focus:border-red-500" />
                     </div>
                   )}
                 </div>
@@ -766,7 +735,7 @@ export default function ReportsPage() {
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">{alertInfo.title}</h3>
             <p className="text-base text-slate-500 mb-6">{alertInfo.message}</p>
-            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-4 text-base font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
+            <button onClick={() => setAlertInfo(null)} className={`w-full rounded-xl py-3.5 text-sm font-bold text-white transition shadow-md ${alertInfo.type === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}>
               ตกลง
             </button>
           </div>

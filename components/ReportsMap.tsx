@@ -1,6 +1,6 @@
 'use client';
 
-import { MapContainer, TileLayer, Polyline, Tooltip, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Tooltip, CircleMarker, Popup, useMap, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useState } from 'react';
@@ -25,6 +25,15 @@ export type VillagePlan = {
   waypoints?: { lat: number; lng: number }[] | null; 
   route_path?: [number, number][] | null;            
 };
+
+// ⭐ กำหนดไอคอนหมุดสำหรับงานจุดเดียว
+const defaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
 const TYPE_COLORS: Record<string, string> = {
   'ถนน คสล.': '#ef4444',
@@ -155,80 +164,99 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
         {plans.map((plan) => {
           const color = TYPE_COLORS[plan.plan_type] || DEFAULT_COLOR;
-          const route = routes[plan.id];
-          const isRoad = plan.start_lat && plan.end_lat;
+          
+          // ⭐ กรณีที่ 1: งานเส้นทาง (มีจุดเริ่มต้นและสิ้นสุด)
+          if (plan.start_lat && plan.start_lng && plan.end_lat && plan.end_lng) {
+            const route = routes[plan.id];
+            if (!route || route.length < 2) return null;
 
-          if (!isRoad || !route || route.length < 2) return null;
+            const startPoint = route[0];
+            const endPoint = route[route.length - 1];
 
-          const startPoint = route[0];
-          const endPoint = route[route.length - 1];
-
-          return (
-            <div key={plan.id}>
-              {/* เส้นทาง */}
-              <Polyline 
-                positions={route} 
-                pathOptions={{ 
-                  color, 
-                  weight: 4, 
-                  opacity: 0.7, 
-                  lineCap: 'round',
-                }} 
-                eventHandlers={{
-                  mouseover: (e) => {
-                    const layer = e.target;
-                    layer.setStyle({ weight: 7, opacity: 1 }); 
-                    layer.bringToFront(); 
-                  },
-                  mouseout: (e) => {
-                    const layer = e.target;
-                    layer.setStyle({ weight: 4, opacity: 0.7 }); 
-                  },
-                }}
-              >
-                {/* ⭐ Tooltip ที่บังคับให้แสดงระยะทางเสมอ */}
-                <Tooltip sticky>
-                  <div className="text-center font-sans p-1">
-                    <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
-                    <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
-                    <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-100 px-2 py-1 rounded-md inline-block">
-                      📏 ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+            return (
+              <div key={plan.id}>
+                <Polyline 
+                  positions={route} 
+                  pathOptions={{ color, weight: 4, opacity: 0.7, lineCap: 'round' }} 
+                  eventHandlers={{
+                    mouseover: (e) => {
+                      const layer = e.target;
+                      layer.setStyle({ weight: 7, opacity: 1 }); 
+                      layer.bringToFront(); 
+                    },
+                    mouseout: (e) => {
+                      const layer = e.target;
+                      layer.setStyle({ weight: 4, opacity: 0.7 }); 
+                    },
+                  }}
+                >
+                  <Tooltip sticky>
+                    <div className="text-center font-sans p-1">
+                      <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
+                      <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
+                      <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-100 px-2 py-1 rounded-md inline-block">
+                        📏 ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                      </div>
                     </div>
-                  </div>
-                </Tooltip>
-              </Polyline>
+                  </Tooltip>
+                </Polyline>
 
-              {/* จุดเริ่มต้น */}
-              <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
-                <Popup>
-                  <div className="text-center font-sans p-1 min-w-[150px]">
-                    <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
-                    <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
-                      ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
+                  <Popup>
+                    <div className="text-center font-sans p-1 min-w-[150px]">
+                      <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
+                      <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
+                        ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                      </div>
+                      <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
+                      <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>
-                    <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
-                    <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
-                  </div>
-                </Popup>
-              </CircleMarker>
+                  </Popup>
+                </CircleMarker>
 
-              {/* จุดสิ้นสุด */}
-              <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
-                <Popup>
-                  <div className="text-center font-sans p-1 min-w-[150px]">
-                    <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
-                    <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
-                    <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
-                      ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
+                  <Popup>
+                    <div className="text-center font-sans p-1 min-w-[150px]">
+                      <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
+                      <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                      <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
+                        ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
+                      </div>
+                      <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
+                      <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>
-                    <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
-                    <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            </div>
-          );
+                  </Popup>
+                </CircleMarker>
+              </div>
+            );
+          }
+
+          // ⭐ กรณีที่ 2: งานจุดเดียว (ปรับปรุง/ก่อสร้าง) - แสดงหมุด
+          if (plan.location_lat && plan.location_lng) {
+            return (
+              <div key={plan.id}>
+                <Marker position={[plan.location_lat, plan.location_lng]} icon={defaultIcon}>
+                  <Tooltip direction="top" offset={[0, -40]}>
+                    <div className="text-center font-sans">
+                      <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
+                      <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
+                    </div>
+                  </Tooltip>
+                  <Popup>
+                    <div className="text-center font-sans p-1 min-w-[150px]">
+                      <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
+                      <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                      <div className="font-bold text-blue-600 text-xs mb-2">📍 ตำแหน่งที่ตั้ง</div>
+                      <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${plan.location_lat},${plan.location_lng}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
+                    </div>
+                  </Popup>
+                </Marker>
+              </div>
+            );
+          }
+
+          return null;
         })}
       </MapContainer>
     </div>

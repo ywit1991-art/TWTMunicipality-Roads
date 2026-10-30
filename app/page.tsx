@@ -51,7 +51,9 @@ export default function SurveyPage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [width, setWidth] = useState('');
   const [details, setDetails] = useState('');
-  const [readiness, setReadiness] = useState<'พร้อม' | 'ไม่พร้อม'>('พร้อม');
+  
+  // ⭐ เปลี่ยน State เป็น ไม่มีอุปสรรค / มีอุปสรรค
+  const [readiness, setReadiness] = useState<'ไม่มีอุปสรรค' | 'มีอุปสรรค'>('ไม่มีอุปสรรค');
   const [problem, setProblem] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -166,8 +168,8 @@ export default function SurveyPage() {
     if (isOtherWork && !location) {
       return setAlertInfo({ title: 'พิกัดไม่ครบถ้วน', message: 'กรุณาระบุ "ตำแหน่งที่ตั้ง" บนแผนที่ก่อนครับ', type: 'error' });
     }
-    if (readiness === 'ไม่พร้อม' && !problem.trim()) {
-      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณาระบุ "ปัญหาที่ไม่พร้อม" ด้วยครับ', type: 'error' });
+    if (readiness === 'มีอุปสรรค' && !problem.trim()) {
+      return setAlertInfo({ title: 'ข้อมูลไม่ครบถ้วน', message: 'กรุณาระบุ "รายละเอียดอุปสรรค" ด้วยครับ', type: 'error' });
     }
 
     setLoading(true);
@@ -181,7 +183,7 @@ export default function SurveyPage() {
         distance_m: isRoadWork ? distance : null,
         width: isRoadWork && width ? parseFloat(width) : null,
         details: isOtherWork ? details : null,
-        readiness, problem: readiness === 'ไม่พร้อม' ? problem : null,
+        readiness, problem: readiness === 'มีอุปสรรค' ? problem : null, // ⭐ บันทึกค่าใหม่
         waypoints: isRoadWork ? waypoints : null,
         route_path: isRoadWork ? routePath : null,
       };
@@ -196,7 +198,7 @@ export default function SurveyPage() {
       setStart(null); setStartLat(''); setStartLng('');
       setEnd(null); setEndLat(''); setEndLng('');
       setWaypoints([]); setLocation(null);
-      setDistance(null); setWidth(''); setDetails(''); setReadiness('พร้อม'); setProblem(''); setPicking('start'); setRoutePath([]);
+      setDistance(null); setWidth(''); setDetails(''); setReadiness('ไม่มีอุปสรรค'); setProblem(''); setPicking('start'); setRoutePath([]);
       
     } catch (err: any) {
       setAlertInfo({ title: 'เกิดข้อผิดพลาด', message: err.message, type: 'error' });
@@ -324,42 +326,42 @@ export default function SurveyPage() {
                 </div>
               )}
 
-              {/* ⭐ ปุ่มพร้อม / ไม่พร้อม สไตล์ใหม่ (เหมือนปุ่มแก้ไข/ลบ) */}
+              {/* ⭐ เปลี่ยนปุ่มเป็น ไม่มีอุปสรรค / มีอุปสรรค */}
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
-                <label className="mb-2 block text-sm font-bold text-slate-700">ความพร้อม</label>
+                <label className="mb-2 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
                 <div className="flex gap-3 mb-3">
                   <button
                     type="button"
-                    onClick={() => setReadiness('พร้อม')}
+                    onClick={() => setReadiness('ไม่มีอุปสรรค')}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
-                      readiness === 'พร้อม'
-                        ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100' // สไตล์เดียวกับปุ่มสีเขียว
+                      readiness === 'ไม่มีอุปสรรค'
+                        ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100'
                         : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    พร้อม
+                    ไม่มีอุปสรรค
                   </button>
                   <button
                     type="button"
-                    onClick={() => setReadiness('ไม่พร้อม')}
+                    onClick={() => setReadiness('มีอุปสรรค')}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
-                      readiness === 'ไม่พร้อม'
-                        ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100' // สไตล์เดียวกับปุ่มลบ
+                      readiness === 'มีอุปสรรค'
+                        ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100'
                         : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    ไม่พร้อม
+                    มีอุปสรรค
                   </button>
                 </div>
-                {readiness === 'ไม่พร้อม' && (
+                {readiness === 'มีอุปสรรค' && (
                   <div className="animate-in fade-in slide-in-from-top-2">
-                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุปัญหาที่ไม่พร้อม..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
+                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
                   </div>
                 )}
               </div>
