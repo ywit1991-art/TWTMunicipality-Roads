@@ -296,10 +296,10 @@ export default function ReportsPage() {
           <div className="flex items-center gap-2 md:gap-3">
             <span className="text-2xl md:text-3xl bg-blue-50 text-blue-600 p-1.5 md:p-2 rounded-xl shrink-0">📊</span>
             <div>
-              <h1 className="text-sm sm:text-base md:text-2xl font-black tracking-tight leading-tight text-slate-800">
+              <h1 className="text-base sm:text-lg md:text-2xl font-black tracking-tight leading-tight text-slate-800">
                 รายงานผลการสำรวจ
               </h1>
-              <p className="text-blue-500 mt-0.5 text-[10px] md:text-sm font-medium leading-tight">
+              <p className="text-blue-500 mt-0.5 text-xs md:text-sm font-medium leading-tight">
                 เทศบาลตำบลท่าวังทอง (พย.11)
               </p>
             </div>
@@ -310,75 +310,72 @@ export default function ReportsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl mt-3 md:mt-8 px-3 md:px-4 space-y-3 md:space-y-6">
+      <main className="mx-auto max-w-7xl mt-3 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-6">
         
         <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 md:py-3 pl-10 pr-3 text-sm font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
+            <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 md:py-3 pl-10 pr-3 text-sm font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
           </div>
           <div className="flex gap-2">
-            <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
+            <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2 md:px-4 py-3 md:py-3 text-sm md:text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
               <option value="ทั้งหมด">🏘️ ทุกหมู่บ้าน</option>
               {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
             </select>
-            <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-2 md:px-4 py-3 md:py-3 text-sm md:text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
               <option value="ทั้งหมด">🛠️ ทุกประเภท</option>
               {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           {hasFilter && (
-            <button onClick={clearFilters} className="rounded-xl bg-red-50 text-red-600 px-4 py-2.5 md:py-3 text-xs md:text-sm font-bold hover:bg-red-100 transition whitespace-nowrap border border-red-100">✕ ล้างค่า</button>
+            <button onClick={clearFilters} className="rounded-xl bg-red-50 text-red-600 px-4 py-3 md:py-3 text-sm md:text-sm font-bold hover:bg-red-100 transition whitespace-nowrap border border-red-100">✕ ล้างค่า</button>
           )}
         </div>
 
-        {/* ⭐ ปรับโฉม Stats Cards ใหม่: พื้นหลังสีขาว มีเส้นขอบสี และตัวเลขสีสัน */}
         <div className="grid grid-cols-3 gap-2 md:gap-5">
-          {/* กล่องที่ 1: จำนวนโครงการทั้งหมด */}
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md hover:border-blue-200">
             <div className="absolute -right-4 -top-4 text-blue-50 opacity-50 text-6xl md:text-8xl transition group-hover:scale-110 group-hover:text-blue-100">📋</div>
             <div className="relative">
-              <div className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">จำนวนโครงการทั้งหมด</div>
-              <div className="text-xl md:text-4xl font-black text-blue-600">
-                {filteredPlans.length} <span className="text-[10px] md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
+              <div className="text-xs md:text-sm font-bold text-slate-500 mb-1">จำนวนโครงการทั้งหมด</div>
+              <div className="text-2xl md:text-4xl font-black text-blue-600">
+                {filteredPlans.length} <span className="text-xs md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-500"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-blue-500"></div>
           </div>
           
-          {/* กล่องที่ 2: ไม่มีอุปสรรค */}
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md hover:border-emerald-200">
             <div className="absolute -right-4 -top-4 text-emerald-50 opacity-50 text-6xl md:text-8xl transition group-hover:scale-110 group-hover:text-emerald-100">✅</div>
             <div className="relative">
-              <div className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">ไม่มีอุปสรรค</div>
-              <div className="text-xl md:text-4xl font-black text-emerald-600">
+              <div className="text-xs md:text-sm font-bold text-slate-500 mb-1">ไม่มีอุปสรรค</div>
+              <div className="text-2xl md:text-4xl font-black text-emerald-600">
                 {filteredPlans.filter(p => p.readiness === 'ไม่มีอุปสรรค' || p.readiness === 'พร้อม').length} 
-                <span className="text-[10px] md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
+                <span className="text-xs md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-emerald-500"></div>
           </div>
 
-          {/* กล่องที่ 3: มีอุปสรรค */}
           <div className="group relative overflow-hidden rounded-2xl bg-white p-3 md:p-6 shadow-sm border border-slate-200 transition-all hover:shadow-md hover:border-red-200">
             <div className="absolute -right-4 -top-4 text-red-50 opacity-50 text-6xl md:text-8xl transition group-hover:scale-110 group-hover:text-red-100">❌</div>
             <div className="relative">
-              <div className="text-[10px] md:text-sm font-bold text-slate-500 mb-1">มีอุปสรรค</div>
-              <div className="text-xl md:text-4xl font-black text-red-600">
+              <div className="text-xs md:text-sm font-bold text-slate-500 mb-1">มีอุปสรรค</div>
+              <div className="text-2xl md:text-4xl font-black text-red-600">
                 {filteredPlans.filter(p => p.readiness === 'มีอุปสรรค' || p.readiness === 'ไม่พร้อม').length} 
-                <span className="text-[10px] md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
+                <span className="text-xs md:text-sm font-medium text-slate-400 block md:inline">โครงการ</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-red-500"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-red-500"></div>
           </div>
         </div>
 
         <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
-          <div className="p-2 md:p-4 flex items-center gap-2">
+          <div className="p-3 md:p-4 flex items-center gap-2">
             <span className="text-xl md:text-2xl">🗺️</span>
-            <h2 className="text-sm md:text-lg font-bold text-slate-800">แผนที่รวมทุกเส้นทาง</h2>
+            <h2 className="text-base md:text-lg font-bold text-slate-800">แผนที่รวมทุกเส้นทาง</h2>
           </div>
-          <div className="rounded-2xl overflow-hidden h-[350px] md:h-[600px] relative z-0">
+          {/* ⭐ เพิ่ม overflow-hidden และ h ที่ชัดเจน */}
+          <div className="rounded-2xl overflow-hidden h-[400px] md:h-[600px] relative z-0">
             {loading ? (
               <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400 font-medium">กำลังโหลดข้อมูล...</div>
             ) : filteredPlans.length === 0 ? (
@@ -390,12 +387,12 @@ export default function ReportsPage() {
         </div>
 
         <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-3 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
+          <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
             <div className="flex items-center gap-2">
-              <span className="text-lg md:text-2xl">📋</span>
-              <h2 className="text-sm md:text-lg font-bold text-slate-800">รายการสำรวจ</h2>
+              <span className="text-xl md:text-2xl">📋</span>
+              <h2 className="text-base md:text-lg font-bold text-slate-800">รายการสำรวจ</h2>
             </div>
-            <span className="text-[10px] md:text-sm font-bold text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-lg">พบ {filteredPlans.length} โครงการ</span>
+            <span className="text-xs md:text-sm font-bold text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-lg">พบ {filteredPlans.length} โครงการ</span>
           </div>
           
           {loading ? (
@@ -404,6 +401,7 @@ export default function ReportsPage() {
             <div className="p-10 text-center text-slate-400 font-medium">ไม่พบข้อมูล</div>
           ) : (
             <>
+              {/* ⭐ ซ่อน Table ในมือถือ (hidden md:block) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
@@ -452,47 +450,48 @@ export default function ReportsPage() {
                 </table>
               </div>
 
+              {/* ⭐ แสดงเฉพาะ Card ในมือถือ (md:hidden) พร้อมปรับขนาดฟอนต์ให้ใหญ่ขึ้น */}
               <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
                 {filteredPlans.map((plan) => {
                   const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
                   return (
-                    <div key={plan.id} className="bg-white rounded-2xl p-3 shadow-sm border border-slate-200">
+                    <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
                       <div className="flex justify-between items-start mb-2 gap-2">
                         <div>
-                          <div className="text-[10px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block mb-1">{plan.village}</div>
-                          <div className="font-bold text-slate-800 text-sm leading-tight">{plan.plan_name}</div>
+                          <div className="text-xs font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block mb-1">{plan.village}</div>
+                          <div className="font-bold text-slate-800 text-base leading-tight">{plan.plan_name}</div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
                           {isNoObstacle ? '✅ ปกติ' : '❌ อุปสรรค'}
                         </span>
                       </div>
                       
-                      <div className="text-[10px] font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-200 mb-2">{plan.plan_type}</div>
+                      <div className="text-xs font-bold text-slate-500 bg-slate-100 inline-block px-2 py-1 rounded border border-slate-200 mb-3">{plan.plan_type}</div>
                       
-                      <div className="bg-slate-50 rounded-xl p-2.5 mb-2.5 border border-slate-100 grid grid-cols-2 gap-2">
-                        <div className="text-[11px] text-slate-600 font-bold">
-                          <span className="text-slate-400 font-medium block">ระยะทาง</span> 
-                          <span className="font-mono text-blue-600 text-sm">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '-'}</span>
+                      <div className="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100 grid grid-cols-2 gap-2">
+                        <div className="text-sm text-slate-600 font-bold">
+                          <span className="text-slate-400 text-xs font-medium block">ระยะทาง</span> 
+                          <span className="font-mono text-blue-600">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '-'}</span>
                         </div>
-                        <div className="text-[11px] text-slate-600 font-bold">
-                          <span className="text-slate-400 font-medium block">ความกว้าง</span> 
-                          <span className="text-slate-800 text-sm">{plan.width ? `${plan.width} ม.` : '-'}</span>
+                        <div className="text-sm text-slate-600 font-bold">
+                          <span className="text-slate-400 text-xs font-medium block">ความกว้าง</span> 
+                          <span className="text-slate-800">{plan.width ? `${plan.width} ม.` : '-'}</span>
                         </div>
                         {plan.problem && (
-                          <div className="col-span-2 text-[11px] text-red-600 font-bold mt-1">
+                          <div className="col-span-2 text-xs text-red-600 font-bold mt-1">
                             ⚠️ {plan.problem}
                           </div>
                         )}
                         {plan.remarks && (
-                          <div className="col-span-2 text-[11px] text-slate-600 font-bold mt-1">
+                          <div className="col-span-2 text-xs text-slate-600 font-bold mt-1">
                             📝 {plan.remarks}
                           </div>
                         )}
                       </div>
 
                       <div className="flex gap-2">
-                        <button onClick={() => requestAuth('edit', plan)} className="flex-1 rounded-xl bg-amber-50 py-2 text-[11px] font-bold text-amber-600 border border-amber-200 active:bg-amber-100 transition">✏️ แก้ไข</button>
-                        <button onClick={() => requestAuth('delete', plan)} className="flex-1 rounded-xl bg-red-50 py-2 text-[11px] font-bold text-red-600 border border-red-200 active:bg-red-100 transition">🗑️ ลบ</button>
+                        <button onClick={() => requestAuth('edit', plan)} className="flex-1 rounded-xl bg-amber-50 py-2.5 text-sm font-bold text-amber-600 border border-amber-200 active:bg-amber-100 transition">✏️ แก้ไข</button>
+                        <button onClick={() => requestAuth('delete', plan)} className="flex-1 rounded-xl bg-red-50 py-2.5 text-sm font-bold text-red-600 border border-red-200 active:bg-red-100 transition">🗑️ ลบ</button>
                       </div>
                     </div>
                   );
@@ -503,6 +502,7 @@ export default function ReportsPage() {
         </div>
       </main>
 
+      {/* Modals ... (เหมือนเดิม) */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -525,6 +525,10 @@ export default function ReportsPage() {
             
             {authError && <p className="mt-2 text-sm font-bold text-red-500 animate-in slide-in-from-top-1">{authError}</p>}
             
+            <div className="mt-3 text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+              💡 รหัสสำหรับทดสอบคือ 55555
+            </div>
+
             <div className="mt-6 flex w-full gap-3">
               <button type="button" onClick={() => setIsAuthModalOpen(false)} className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">ยกเลิก</button>
               <button type="button" onClick={() => verifyPassword(password)} className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 shadow-md transition">ยืนยันรหัส</button>
@@ -560,6 +564,7 @@ export default function ReportsPage() {
       )}
 
       {editingPlan && (
+        // Modal แก้ไข (ใช้โค้ดเดิม)
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-4 md:p-5 text-white">

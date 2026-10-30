@@ -140,18 +140,19 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
       : "relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200"
     }>
       
-      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+      {/* ⭐ ปรับตำแหน่งปุ่มให้ชิดขอบขวาไม่ล้นจอ (right-2 md:right-3) */}
+      <div className="absolute top-2 right-2 md:top-3 md:right-3 z-[1000] flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={() => setIsFullscreen(!isFullscreen)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200 whitespace-nowrap"
         >
           {isFullscreen ? '✖️ ปิดเต็มจอ' : '⛶ เต็มหน้าจอ'}
         </button>
         <button
           type="button"
           onClick={() => setIsSatellite(!isSatellite)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200 whitespace-nowrap"
         >
           {isSatellite ? '🗺️ แผนที่ถนน' : '🛰️ ดาวเทียม'}
         </button>
@@ -213,7 +214,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                     },
                   }}
                 >
-                  {/* ⭐ กลับมาใช้ Tooltip แบบเดิมที่ข้อความไม่แตกบรรทัด */}
                   <Tooltip sticky>
                     <div className="text-center p-1">
                       <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
