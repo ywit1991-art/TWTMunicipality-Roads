@@ -52,7 +52,9 @@ export default function SurveyPage() {
   const [width, setWidth] = useState('');
   const [details, setDetails] = useState('');
   
-  // ⭐ เปลี่ยน State เป็น ไม่มีอุปสรรค / มีอุปสรรค
+  // ⭐ เพิ่ม State สำหรับหมายเหตุ
+  const [remarks, setRemarks] = useState('');
+
   const [readiness, setReadiness] = useState<'ไม่มีอุปสรรค' | 'มีอุปสรรค'>('ไม่มีอุปสรรค');
   const [problem, setProblem] = useState('');
   
@@ -183,9 +185,11 @@ export default function SurveyPage() {
         distance_m: isRoadWork ? distance : null,
         width: isRoadWork && width ? parseFloat(width) : null,
         details: isOtherWork ? details : null,
-        readiness, problem: readiness === 'มีอุปสรรค' ? problem : null, // ⭐ บันทึกค่าใหม่
+        readiness, problem: readiness === 'มีอุปสรรค' ? problem : null,
         waypoints: isRoadWork ? waypoints : null,
         route_path: isRoadWork ? routePath : null,
+        // ⭐ เพิ่มหมายเหตุใน Payload
+        remarks: remarks.trim() !== '' ? remarks : null,
       };
 
       const { error } = await supabase.from('village_plans').insert(payload);
@@ -199,6 +203,8 @@ export default function SurveyPage() {
       setEnd(null); setEndLat(''); setEndLng('');
       setWaypoints([]); setLocation(null);
       setDistance(null); setWidth(''); setDetails(''); setReadiness('ไม่มีอุปสรรค'); setProblem(''); setPicking('start'); setRoutePath([]);
+      // ⭐ ล้างค่าหมายเหตุ
+      setRemarks('');
       
     } catch (err: any) {
       setAlertInfo({ title: 'เกิดข้อผิดพลาด', message: err.message, type: 'error' });
@@ -208,7 +214,8 @@ export default function SurveyPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 bg-slate-50/50 font-sans">
+    // ⭐ ลบ font-sans ออก
+    <div className="min-h-screen pb-20 bg-slate-50/50">
       
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
@@ -326,7 +333,6 @@ export default function SurveyPage() {
                 </div>
               )}
 
-              {/* ⭐ เปลี่ยนปุ่มเป็น ไม่มีอุปสรรค / มีอุปสรรค */}
               <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
                 <label className="mb-2 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
                 <div className="flex gap-3 mb-3">
@@ -364,6 +370,18 @@ export default function SurveyPage() {
                     <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
                   </div>
                 )}
+              </div>
+
+              {/* ⭐ เพิ่มช่องหมายเหตุ */}
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700">หมายเหตุเพิ่มเติม</label>
+                <textarea 
+                  value={remarks} 
+                  onChange={(e) => setRemarks(e.target.value)} 
+                  rows={3} 
+                  placeholder="ระบุหมายเหตุหรือข้อมูลเพิ่มเติมที่นี่..." 
+                  className="w-full rounded-xl bg-slate-50 border-none px-4 py-3.5 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 transition resize-none" 
+                />
               </div>
 
               <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-base font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">

@@ -24,9 +24,9 @@ export type VillagePlan = {
   created_at: string;
   waypoints?: { lat: number; lng: number }[] | null; 
   route_path?: [number, number][] | null;            
+  remarks?: string | null; 
 };
 
-// ⭐ กำหนดไอคอนหมุดสำหรับงานจุดเดียว
 const defaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -80,9 +80,20 @@ function MapBoundsController({ plans }: { plans: VillagePlan[] }) {
   return null;
 }
 
+function ResizeHandler({ isFullscreen }: { isFullscreen: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+  }, [isFullscreen, map]);
+  return null;
+}
+
 export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   const [routes, setRoutes] = useState<Record<number, [number, number][]>>({});
   const [isSatellite, setIsSatellite] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const plansDataString = JSON.stringify(plans.map(p => ({ id: p.id, path: p.route_path })));
 
@@ -124,14 +135,25 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
   };
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200">
-      <div className="absolute top-3 right-3 z-[1000]">
+    <div className={isFullscreen 
+      ? "fixed inset-0 z-[9999] bg-white" 
+      : "relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200"
+    }>
+      
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
+        >
+          {isFullscreen ? '✖️ ปิดเต็มจอ' : '⛶ เต็มหน้าจอ'}
+        </button>
         <button
           type="button"
           onClick={() => setIsSatellite(!isSatellite)}
-          className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
+          className="flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-md hover:bg-slate-50 transition border border-slate-200"
         >
-          {isSatellite ? '🗺️ สลับเป็นแผนที่ถนน' : '🛰️ สลับเป็นดาวเทียม'}
+          {isSatellite ? '🗺️ แผนที่ถนน' : '🛰️ ดาวเทียม'}
         </button>
       </div>
 
@@ -145,6 +167,8 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
         zoomControl={true}
         style={{ height: '100%', width: '100%' }}
       >
+        <ResizeHandler isFullscreen={isFullscreen} />
+
         {isSatellite ? (
           <TileLayer 
             attribution='Tiles &copy; Esri' 
@@ -165,7 +189,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
         {plans.map((plan) => {
           const color = TYPE_COLORS[plan.plan_type] || DEFAULT_COLOR;
           
-          // ⭐ กรณีที่ 1: งานเส้นทาง (มีจุดเริ่มต้นและสิ้นสุด)
           if (plan.start_lat && plan.start_lng && plan.end_lat && plan.end_lng) {
             const route = routes[plan.id];
             if (!route || route.length < 2) return null;
@@ -190,8 +213,9 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                     },
                   }}
                 >
+                  {/* ⭐ กลับมาใช้ Tooltip แบบเดิมที่ข้อความไม่แตกบรรทัด */}
                   <Tooltip sticky>
-                    <div className="text-center font-sans p-1">
+                    <div className="text-center p-1">
                       <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
                       <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
                       <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-100 px-2 py-1 rounded-md inline-block">
@@ -203,12 +227,13 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
                 <CircleMarker center={startPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                   <Popup>
-                    <div className="text-center font-sans p-1 min-w-[150px]">
+                    <div className="text-center p-1 min-w-[150px]">
                       <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                       <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
                         ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
                       </div>
+                      {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
                       <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>
@@ -217,12 +242,13 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
 
                 <CircleMarker center={endPoint} radius={6} pathOptions={{ color: 'white', weight: 2, fillColor: color, fillOpacity: 1 }}>
                   <Popup>
-                    <div className="text-center font-sans p-1 min-w-[150px]">
+                    <div className="text-center p-1 min-w-[150px]">
                       <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                       <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
                         ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
                       </div>
+                      {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
                       <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>
@@ -232,21 +258,21 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
             );
           }
 
-          // ⭐ กรณีที่ 2: งานจุดเดียว (ปรับปรุง/ก่อสร้าง) - แสดงหมุด
           if (plan.location_lat && plan.location_lng) {
             return (
               <div key={plan.id}>
                 <Marker position={[plan.location_lat, plan.location_lng]} icon={defaultIcon}>
                   <Tooltip direction="top" offset={[0, -40]}>
-                    <div className="text-center font-sans">
+                    <div className="text-center">
                       <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
                       <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
                     </div>
                   </Tooltip>
                   <Popup>
-                    <div className="text-center font-sans p-1 min-w-[150px]">
+                    <div className="text-center p-1 min-w-[150px]">
                       <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                       <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                      {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
                       <div className="font-bold text-blue-600 text-xs mb-2">📍 ตำแหน่งที่ตั้ง</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${plan.location_lat},${plan.location_lng}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>

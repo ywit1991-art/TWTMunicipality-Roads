@@ -14,7 +14,7 @@ body {
   font-size: 18px !important;
 }
 
-/* ปรับแต่ง Tooltip ให้สวยงาม */
+/* ปรับแต่ง Tooltip ให้สวยงาม (กลับมาใช้ค่าเดิม ไม่บีบข้อความ) */
 .leaflet-tooltip {
   background-color: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #e2e8f0 !important;

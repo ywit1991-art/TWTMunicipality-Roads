@@ -215,7 +215,8 @@ export default function MapPicker({
             eventHandlers={{ dragend: (e) => { const p = (e.target as L.Marker).getLatLng(); onDrag?.('start', { lat: p.lat, lng: p.lng }); } }}
           >
             <Popup>
-              <div className="text-center font-sans p-2 min-w-[130px]">
+              {/* ⭐ ลบ font-sans ออก */}
+              <div className="text-center p-2 min-w-[130px]">
                 <div className="font-bold text-slate-800 mb-2 text-sm">🟢 จุดเริ่มต้น</div>
                 {onClearStart && (
                   <button onClick={onClearStart} className="bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-600 transition shadow-sm w-full mb-2">
@@ -242,7 +243,8 @@ export default function MapPicker({
             }}
           >
             <Popup>
-              <div className="text-center font-sans p-2 min-w-[130px]">
+              {/* ⭐ ลบ font-sans ออก */}
+              <div className="text-center p-2 min-w-[130px]">
                 <div className="font-bold text-slate-800 mb-2 text-sm">จุดผ่านที่ {idx + 1}</div>
                 <button 
                   onClick={() => onWaypointDelete?.(idx)}
@@ -263,7 +265,8 @@ export default function MapPicker({
             eventHandlers={{ dragend: (e) => { const p = (e.target as L.Marker).getLatLng(); onDrag?.('end', { lat: p.lat, lng: p.lng }); } }}
           >
             <Popup>
-              <div className="text-center font-sans p-2 min-w-[130px]">
+              {/* ⭐ ลบ font-sans ออก */}
+              <div className="text-center p-2 min-w-[130px]">
                 <div className="font-bold text-slate-800 mb-2 text-sm">🔴 จุดสิ้นสุด</div>
                 {onClearEnd && (
                   <button onClick={onClearEnd} className="bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-600 transition shadow-sm w-full mb-2">
@@ -284,7 +287,8 @@ export default function MapPicker({
            eventHandlers={{ dragend: (e) => { const p = (e.target as L.Marker).getLatLng(); onDrag?.('start', { lat: p.lat, lng: p.lng }); } }}
          >
            <Popup>
-             <div className="text-center font-sans p-2 min-w-[130px]">
+             {/* ⭐ ลบ font-sans ออก */}
+             <div className="text-center p-2 min-w-[130px]">
                <div className="font-bold text-slate-800 mb-2 text-sm">📍 ตำแหน่งที่ตั้ง</div>
                {onClearLocation && (
                  <button onClick={onClearLocation} className="bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-600 transition shadow-sm w-full mb-2">
