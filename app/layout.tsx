@@ -13,7 +13,7 @@ export const viewport: Viewport = {
   themeColor: '#1e3a8a',
   width: 'device-width',
   initialScale: 1,
-  // ⭐ ไม่ต้องใส่ maximumScale หรือ userScalable เพื่อให้ซูมได้ปกติ
+  // ⭐ เอา maximumScale และ userScalable ออก เพื่อให้เบราว์เซอร์ทำงานปกติ
 };
 
 export const metadata: Metadata = {
