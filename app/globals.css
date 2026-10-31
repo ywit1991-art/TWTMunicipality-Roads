@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
-html,
+/* ⭐ บังคับขนาดฟอนต์พื้นฐานให้ใหญ่ขึ้นเป็น 18px ทุกอุปกรณ์ */
+html {
+  font-size: 18px !important; 
+  /* ⭐ ห้าม LINE หรือ Browser ขยายฟอนต์เอง เพื่อให้ทุกที่เท่ากัน */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
 body {
   font-family: var(--font-trirong), 'Trirong', ui-sans-serif, system-ui, sans-serif;
   background-color: #f8fafc;
 }
 
-/* ⭐ เพิ่มขนาดฟอนต์พื้นฐานบนมือถือให้ใหญ่ขึ้น (จาก 16px เป็น 18px) */
-@media (max-width: 768px) {
-  html {
-    font-size: 18px; 
-  }
+/* บังคับ Input และ Select ไม่ให้เบราว์เซอร์มือถือซูมหน้าจออัตโนมัติ */
+input, select, textarea {
+  font-size: 16px !important; /* ค่ามาตรฐานที่ iOS ไม่ซูม */
 }
 
 /* ลดขนาดปุ่ม Zoom ของ Leaflet */

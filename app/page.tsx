@@ -242,9 +242,7 @@ export default function SurveyPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               
               <div>
-                {/* ⭐ ตัวหนังสือ Label ใหญ่ขึ้น (text-lg) */}
                 <label className="mb-2 block text-lg md:text-sm font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                {/* ⭐ กล่อง Select สูงขึ้น (py-4) ตัวหนังสือใหญ่ขึ้น (text-lg) */}
                 <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-2xl bg-slate-50 border border-slate-200 px-4 py-4 text-lg md:text-sm font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer appearance-none">
                   <option value="">-- เลือกหมู่บ้าน --</option>
                   {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
