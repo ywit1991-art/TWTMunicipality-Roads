@@ -13,6 +13,7 @@ export const viewport: Viewport = {
   themeColor: '#1e3a8a',
   width: 'device-width',
   initialScale: 1,
+  // ⭐ ลบ maximumScale และ userScalable ออก เพื่อให้ผู้ใช้ซูมหน้าจอเองได้
 };
 
 export const metadata: Metadata = {
@@ -39,7 +40,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th">
-      {/* ⭐ ลบ font-sans ออก เพื่อให้ใช้ฟอนต์ Trirong จาก globals.css */}
       <body className={`${trirong.variable} antialiased text-slate-800 bg-slate-50`}>
         {children}
       </body>
