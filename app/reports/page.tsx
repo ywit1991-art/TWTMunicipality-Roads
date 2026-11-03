@@ -12,7 +12,7 @@ import type { VillagePlan } from '@/components/ReportsMap';
 const MapPicker = nextDynamic(() => import('@/components/MapPicker'), { ssr: false });
 const ReportsMap = nextDynamic(() => import('@/components/ReportsMap'), { 
   ssr: false,
-  loading: () => <div className="flex h-[300px] md:h-[600px] w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">กำลังโหลดแผนที่...</div>
+  loading: () => <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-100 text-slate-400">กำลังโหลดแผนที่...</div>
 });
 
 const VILLAGES = ['หมู่ 6', 'หมู่ 7', 'หมู่ 10', 'หมู่ 11'];
@@ -41,6 +41,7 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVillage, setFilterVillage] = useState('ทั้งหมด');
   const [filterType, setFilterType] = useState('ทั้งหมด');
+  const [filterReadiness, setFilterReadiness] = useState('ทั้งหมด');
 
   const [editStart, setEditStart] = useState<LatLng | null>(null);
   const [editEnd, setEditEnd] = useState<LatLng | null>(null);
@@ -78,11 +79,23 @@ export default function ReportsPage() {
     const matchSearch = plan.plan_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchVillage = filterVillage === 'ทั้งหมด' || plan.village === filterVillage;
     const matchType = filterType === 'ทั้งหมด' || plan.plan_type === filterType;
-    return matchSearch && matchVillage && matchType;
+    
+    const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
+    const hasObstacle = plan.readiness === 'มีอุปสรรค' || plan.readiness === 'ไม่พร้อม';
+    const matchReadiness = 
+      filterReadiness === 'ทั้งหมด' ? true :
+      filterReadiness === 'ไม่มีอุปสรรค' ? isNoObstacle : hasObstacle;
+
+    return matchSearch && matchVillage && matchType && matchReadiness;
   });
 
-  const clearFilters = () => { setSearchQuery(''); setFilterVillage('ทั้งหมด'); setFilterType('ทั้งหมด'); };
-  const hasFilter = searchQuery !== '' || filterVillage !== 'ทั้งหมด' || filterType !== 'ทั้งหมด';
+  const clearFilters = () => { 
+    setSearchQuery(''); 
+    setFilterVillage('ทั้งหมด'); 
+    setFilterType('ทั้งหมด'); 
+    setFilterReadiness('ทั้งหมด');
+  };
+  const hasFilter = searchQuery !== '' || filterVillage !== 'ทั้งหมด' || filterType !== 'ทั้งหมด' || filterReadiness !== 'ทั้งหมด';
 
   const requestAuth = (type: 'edit' | 'delete', plan: VillagePlan) => {
     setPendingAction({ type, plan });
@@ -130,7 +143,6 @@ export default function ReportsPage() {
   }
 
   function executeEdit(plan: VillagePlan) {
-    // ⭐ แปลงค่าจาก DB แบบเก่า (พร้อม/ไม่พร้อม) ให้เป็นค่าใหม่
     const mappedReadiness = plan.readiness === 'พร้อม' ? 'ไม่มีอุปสรรค' : plan.readiness === 'ไม่พร้อม' ? 'มีอุปสรรค' : plan.readiness;
     const newPlan = { ...plan, readiness: mappedReadiness };
 
@@ -263,7 +275,7 @@ export default function ReportsPage() {
         plan_name: editingPlan.plan_name, 
         plan_type: editingPlan.plan_type,
         readiness: editingPlan.readiness, 
-        problem: editingPlan.readiness === 'มีอุปสรรค' ? editingPlan.problem : null, // ⭐ เซฟค่าใหม่
+        problem: editingPlan.readiness === 'มีอุปสรรค' ? editingPlan.problem : null,
         details: editingPlan.details, 
         width: editingPlan.width,
         start_lat: isRoad ? editStart?.lat : null, 
@@ -275,6 +287,7 @@ export default function ReportsPage() {
         distance_m: isRoad ? editDistance : null,
         waypoints: isRoad ? editWaypoints : null, 
         route_path: isRoad ? finalRoutePath : null,
+        remarks: editingPlan.remarks || null, 
       }).eq('id', editingPlan.id);
 
     if (error) {
@@ -289,88 +302,149 @@ export default function ReportsPage() {
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
 
   return (
-    <div className="min-h-screen pb-10 bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col w-full">
       
-      <header className="flex-shrink-0 bg-white border-b border-slate-200 px-3 py-3 md:px-6 md:py-5 shadow-sm z-10 relative">
-        <div className="mx-auto max-w-7xl flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="text-2xl md:text-3xl bg-blue-50 text-blue-600 p-1.5 md:p-2 rounded-xl shrink-0">📊</span>
+      {/* ⭐ Header เต็มความกว้าง */}
+      <header className="flex-shrink-0 bg-white border-b border-slate-200 w-full px-4 md:px-6 py-3 shadow-sm z-10 sticky top-0">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl bg-blue-50 text-blue-600 p-2 rounded-xl shrink-0">📊</span>
             <div>
-              <h1 className="text-base md:text-2xl font-black tracking-tight leading-tight text-slate-800">
+              <h1 className="text-lg md:text-xl font-black tracking-tight text-slate-800">
                 รายงานผลการสำรวจ
               </h1>
-              <p className="text-blue-500 mt-0.5 text-[10px] md:text-sm font-medium leading-tight">
+              <p className="text-blue-500 text-xs font-medium">
                 เทศบาลตำบลท่าวังทอง (พย.11)
               </p>
             </div>
           </div>
-          <Link href="/" className="shrink-0 rounded-xl bg-slate-100 px-3 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-200 transition shadow-sm flex items-center gap-1.5 md:gap-2">
-            <span>⬅️</span> <span className="hidden md:inline">กลับหน้าสำรวจ</span><span className="md:hidden">กลับ</span>
+          <Link href="/" className="shrink-0 rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 transition shadow-sm flex items-center gap-2">
+            <span>⬅️</span> <span className="hidden sm:inline">กลับหน้าสำรวจ</span>
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl mt-4 md:mt-8 px-3 md:px-4 space-y-4 md:space-y-6">
+      {/* ⭐ Main เต็มความกว้าง */}
+      <main className="flex-1 w-full p-3 md:p-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
         
-        <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3">
-          <div className="flex-1 relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 md:py-3 pl-11 pr-4 text-sm font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
-          </div>
-          <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
-            <option value="ทั้งหมด">🏘️ ทุกหมู่บ้าน</option>
-            {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 md:py-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 focus:bg-white transition cursor-pointer">
-            <option value="ทั้งหมด">🛠️ ทุกประเภทงาน</option>
-            {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          {hasFilter && (
-            <button onClick={clearFilters} className="rounded-xl bg-red-50 text-red-600 px-5 py-2.5 md:py-3 text-sm font-bold hover:bg-red-100 transition whitespace-nowrap border border-red-100">✕ ล้างค่า</button>
-          )}
-        </div>
-
-        {/* ⭐ Stats Cards เปลี่ยนคำ */}
-        <div className="grid grid-cols-3 gap-2 md:gap-5">
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
-            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">📋</div>
-            <div className="relative">
-              <div className="text-xs md:text-sm font-bold text-blue-100 mb-1">แผนที่พบ</div>
-              <div className="text-2xl md:text-4xl font-black">{filteredPlans.length} <span className="text-sm font-medium text-blue-100 block md:inline">รายการ</span></div>
-            </div>
-          </div>
+        {/* ================= ฝั่งซ้าย (40%) ================= */}
+        <div className="lg:col-span-2 flex flex-col gap-4 h-[calc(100vh-6rem)] lg:h-[calc(100vh-5rem)]">
           
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
-            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">✅</div>
+          <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 shrink-0">
             <div className="relative">
-              <div className="text-xs md:text-sm font-bold text-emerald-100 mb-1">ไม่มีอุปสรรค</div>
-              <div className="text-2xl md:text-4xl font-black">
-                {filteredPlans.filter(p => p.readiness === 'ไม่มีอุปสรรค' || p.readiness === 'พร้อม').length} 
-                <span className="text-sm font-medium text-emerald-100 block md:inline">รายการ</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+              <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-base font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
+            </div>
+            
+            {/* ⭐ หมู่บ้าน และ ประเภทงาน อยู่ข้างกัน + Custom Arrow */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
+                  <option value="ทั้งหมด">🏘️ ทุกหมู่บ้าน</option>
+                  {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
+                  <option value="ทั้งหมด">🛠️ ทุกประเภท</option>
+                  {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            {/* ⭐ ตัวกรองสถานะอุปสรรค + ปุ่มล้างค่า */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <select value={filterReadiness} onChange={(e) => setFilterReadiness(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
+                  <option value="ทั้งหมด">⚖️ ทุกสถานะอุปสรรค</option>
+                  <option value="ไม่มีอุปสรรค">✅ ไม่มีอุปสรรค</option>
+                  <option value="มีอุปสรรค">❌ มีอุปสรรค</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+              {hasFilter && (
+                <button onClick={clearFilters} className="shrink-0 rounded-xl bg-red-50 text-red-600 px-3 py-2.5 text-sm font-bold hover:bg-red-100 transition border border-red-100">
+                  ✕ ล้าง
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              <div className="bg-blue-50 rounded-lg p-2 text-center border border-blue-100">
+                <div className="text-[10px] font-bold text-blue-600">ทั้งหมด</div>
+                <div className="text-lg font-black text-blue-700">{filteredPlans.length}</div>
+              </div>
+              <div className="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100">
+                <div className="text-[10px] font-bold text-emerald-600">ไม่มีอุปสรรค</div>
+                <div className="text-lg font-black text-emerald-700">{filteredPlans.filter(p => p.readiness === 'ไม่มีอุปสรรค' || p.readiness === 'พร้อม').length}</div>
+              </div>
+              <div className="bg-red-50 rounded-lg p-2 text-center border border-red-100">
+                <div className="text-[10px] font-bold text-red-600">มีอุปสรรค</div>
+                <div className="text-lg font-black text-red-700">{filteredPlans.filter(p => p.readiness === 'มีอุปสรรค' || p.readiness === 'ไม่พร้อม').length}</div>
               </div>
             </div>
           </div>
 
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500 to-red-600 p-3 md:p-6 text-white shadow-md transition hover:shadow-lg">
-            <div className="absolute -right-4 -top-4 text-white/10 text-8xl transition group-hover:scale-110">❌</div>
-            <div className="relative">
-              <div className="text-xs md:text-sm font-bold text-red-100 mb-1">มีอุปสรรค</div>
-              <div className="text-2xl md:text-4xl font-black">
-                {filteredPlans.filter(p => p.readiness === 'มีอุปสรรค' || p.readiness === 'ไม่พร้อม').length} 
-                <span className="text-sm font-medium text-red-100 block md:inline">รายการ</span>
-              </div>
-            </div>
+          <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-3 space-y-3">
+            {loading ? (
+              <div className="text-center py-10 text-slate-400">กำลังโหลด...</div>
+            ) : filteredPlans.length === 0 ? (
+              <div className="text-center py-10 text-slate-400">ไม่พบข้อมูล</div>
+            ) : (
+              filteredPlans.map((plan) => {
+                const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
+                return (
+                  <div key={plan.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                      <div>
+                        <div className="text-xs font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded inline-block mb-1">{plan.village}</div>
+                        <div className="font-bold text-slate-800 text-base leading-tight">{plan.plan_name}</div>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold border ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-red-100 text-red-800 border-red-200'}`}>
+                        {isNoObstacle ? '✅ ปกติ' : '❌ อุปสรรค'}
+                      </span>
+                    </div>
+                    
+                    <div className="text-xs font-bold text-slate-500 bg-slate-200/50 inline-block px-2 py-0.5 rounded mb-2">{plan.plan_type}</div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-sm bg-white rounded-lg p-2 border border-slate-100 mb-2">
+                      <div className="text-slate-600 font-bold">
+                        <span className="text-slate-400 text-xs block">ระยะทาง</span> 
+                        <span className="font-mono text-blue-600">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '-'}</span>
+                      </div>
+                      <div className="text-slate-600 font-bold">
+                        <span className="text-slate-400 text-xs block">ความกว้าง</span> 
+                        <span className="text-slate-800">{plan.width ? `${plan.width} ม.` : '-'}</span>
+                      </div>
+                      {plan.problem && <div className="col-span-2 text-xs text-red-600 font-bold mt-1">⚠️ {plan.problem}</div>}
+                      {plan.remarks && <div className="col-span-2 text-xs text-slate-600 font-bold mt-1">📝 {plan.remarks}</div>}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button onClick={() => requestAuth('edit', plan)} className="flex-1 rounded-lg bg-amber-100 py-2 text-sm font-bold text-amber-700 border border-amber-200 active:bg-amber-200 transition">✏️ แก้ไข</button>
+                      <button onClick={() => requestAuth('delete', plan)} className="flex-1 rounded-lg bg-red-100 py-2 text-sm font-bold text-red-700 border border-red-200 active:bg-red-200 transition">🗑️ ลบ</button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white p-2 shadow-sm border border-slate-200">
-          <div className="p-3 md:p-4 flex items-center gap-2">
-            <span className="text-xl md:text-2xl">🗺️</span>
-            <h2 className="text-base md:text-lg font-bold text-slate-800">แผนที่รวมทุกเส้นทาง</h2>
-          </div>
-          <div className="rounded-2xl overflow-hidden h-[400px] md:h-[600px] relative z-0">
+        {/* ================= ฝั่งขวา (60%) ================= */}
+        <div className="lg:col-span-3 h-[500px] lg:h-[calc(100vh-5rem)] lg:sticky lg:top-[5rem] rounded-2xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden">
+          <div className="w-full h-full rounded-xl overflow-hidden relative">
             {loading ? (
-              <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400 font-medium">กำลังโหลดข้อมูล...</div>
+              <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400 font-medium">กำลังโหลดแผนที่...</div>
             ) : filteredPlans.length === 0 ? (
               <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400 font-medium">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</div>
             ) : (
@@ -379,116 +453,8 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-slate-200 flex justify-between items-center bg-white">
-            <div className="flex items-center gap-2">
-              <span className="text-xl md:text-2xl">📋</span>
-              <h2 className="text-base md:text-lg font-bold text-slate-800">รายการสำรวจ</h2>
-            </div>
-            <span className="text-xs md:text-sm font-bold text-blue-600 bg-blue-50 px-2 md:px-3 py-1 rounded-lg">พบ {filteredPlans.length} รายการ</span>
-          </div>
-          
-          {loading ? (
-            <div className="p-10 text-center text-slate-400 font-medium">กำลังโหลด...</div>
-          ) : filteredPlans.length === 0 ? (
-            <div className="p-10 text-center text-slate-400 font-medium">ไม่พบข้อมูล</div>
-          ) : (
-            <>
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
-                    <tr>
-                      <th className="px-6 py-4">หมู่บ้าน</th>
-                      <th className="px-6 py-4">ชื่อแผน / ประเภท</th>
-                      <th className="px-6 py-4">ระยะทาง (กม.)</th>
-                      <th className="px-6 py-4">ความกว้าง (ม.)</th>
-                      <th className="px-6 py-4">สถานะอุปสรรค</th>
-                      <th className="px-6 py-4 text-center">จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredPlans.map((plan, index) => {
-                      // ⭐ แปลงค่าเก่าให้แสดงผลเป็นค่าใหม่
-                      const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
-                      return (
-                        <tr key={plan.id} className={`transition-colors hover:bg-blue-50/50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                          <td className="px-6 py-4 font-black text-slate-700">{plan.village}</td>
-                          <td className="px-6 py-4">
-                            <div className="font-bold text-slate-800 text-base mb-1">{plan.plan_name}</div>
-                            <div className="text-xs font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-md border border-slate-200">{plan.plan_type}</div>
-                            {plan.problem && <div className="text-xs text-red-600 mt-1 max-w-[200px] truncate font-bold bg-red-50 px-2 py-1 rounded-md border border-red-100" title={plan.problem}>⚠️ {plan.problem}</div>}
-                          </td>
-                          <td className="px-6 py-4 font-bold text-blue-600 font-mono text-base">
-                            {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '-'}
-                          </td>
-                          <td className="px-6 py-4 font-bold text-slate-600">
-                            {plan.width ? plan.width : '-'}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                              {isNoObstacle ? '✅ ไม่มีอุปสรรค' : '❌ มีอุปสรรค'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex justify-center gap-2">
-                              <button onClick={() => requestAuth('edit', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 shadow-sm transition">✏️ แก้ไข</button>
-                              <button onClick={() => requestAuth('delete', plan)} className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 shadow-sm transition">🗑️ ลบ</button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="md:hidden flex flex-col gap-3 p-3 bg-slate-50">
-                {filteredPlans.map((plan) => {
-                  const isNoObstacle = plan.readiness === 'ไม่มีอุปสรรค' || plan.readiness === 'พร้อม';
-                  return (
-                    <div key={plan.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-                      <div className="flex justify-between items-start mb-2 gap-2">
-                        <div>
-                          <div className="text-xs font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded inline-block mb-1">{plan.village}</div>
-                          <div className="font-bold text-slate-800 text-sm leading-tight">{plan.plan_name}</div>
-                        </div>
-                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm ${isNoObstacle ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                          {isNoObstacle ? '✅ ไม่มีอุปสรรค' : '❌ มีอุปสรรค'}
-                        </span>
-                      </div>
-                      
-                      <div className="text-[11px] font-bold text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded border border-slate-200 mb-3">{plan.plan_type}</div>
-                      
-                      <div className="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100 grid grid-cols-2 gap-2">
-                        <div className="text-xs text-slate-600 font-bold">
-                          <span className="text-slate-400 font-medium block">ระยะทาง</span> 
-                          <span className="font-mono text-blue-600 text-sm">{plan.distance_m ? `${(plan.distance_m / 1000).toFixed(3)} กม.` : '-'}</span>
-                        </div>
-                        <div className="text-xs text-slate-600 font-bold">
-                          <span className="text-slate-400 font-medium block">ความกว้าง</span> 
-                          <span className="text-slate-800 text-sm">{plan.width ? `${plan.width} ม.` : '-'}</span>
-                        </div>
-                        {plan.problem && (
-                          <div className="col-span-2 text-xs text-red-600 font-bold mt-1">
-                            ⚠️ {plan.problem}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button onClick={() => requestAuth('edit', plan)} className="flex-1 rounded-xl bg-amber-50 py-2 text-xs font-bold text-amber-600 border border-amber-200 active:bg-amber-100 transition">✏️ แก้ไข</button>
-                        <button onClick={() => requestAuth('delete', plan)} className="flex-1 rounded-xl bg-red-50 py-2 text-xs font-bold text-red-600 border border-red-200 active:bg-red-100 transition">🗑️ ลบ</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
       </main>
 
-      {/* Modals... (Auth, Delete) */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center">
@@ -549,46 +515,56 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Modal แก้ไข */}
       {editingPlan && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-5 text-white">
-              <h3 className="font-bold text-lg md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
+            <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-500 p-4 md:p-5 text-white">
+              <h3 className="font-bold text-base md:text-xl flex items-center gap-2">✏️ แก้ไขข้อมูลแผนและพิกัด</h3>
               <button onClick={() => setEditingPlan(null)} className="rounded-full bg-white/20 w-8 h-8 flex items-center justify-center hover:bg-white/30 transition font-bold">✕</button>
             </div>
             
             <form onSubmit={handleUpdate} className="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              <div className="flex flex-col gap-4 md:gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">หมู่บ้าน</label>
-                    <select value={editingPlan.village} onChange={(e) => setEditingPlan({...editingPlan, village: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition bg-slate-50">
-                      {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
+                    <div className="relative">
+                      <select value={editingPlan.village} onChange={(e) => setEditingPlan({...editingPlan, village: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition bg-slate-50 text-base appearance-none pr-10">
+                        {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">ชื่อแผน</label>
-                    <input type="text" value={editingPlan.plan_name} onChange={(e) => setEditingPlan({...editingPlan, plan_name: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition" required />
+                    <input type="text" value={editingPlan.plan_name} onChange={(e) => setEditingPlan({...editingPlan, plan_name: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition text-base" required />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">ประเภทงาน</label>
-                  <select value={editingPlan.plan_type} onChange={(e) => setEditingPlan({...editingPlan, plan_type: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition bg-slate-50">
-                    {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select value={editingPlan.plan_type} onChange={(e) => setEditingPlan({...editingPlan, plan_type: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-50 transition bg-slate-50 text-base appearance-none pr-10">
+                      {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
 
                 {isRoadWork && (
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <label className="block text-sm font-bold text-slate-700 mb-2">ความกว้าง (เมตร)</label>
-                      <input type="number" step="0.01" value={editingPlan.width || ''} onChange={(e) => setEditingPlan({...editingPlan, width: e.target.value ? parseFloat(e.target.value) : null})} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-amber-500" />
+                      <input type="number" step="0.01" value={editingPlan.width || ''} onChange={(e) => setEditingPlan({...editingPlan, width: e.target.value ? parseFloat(e.target.value) : null})} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 text-base" />
                     </div>
                     <div className="flex-1">
                       <label className="block text-sm font-bold text-slate-700 mb-2">ระยะทาง (คำนวณใหม่)</label>
-                      <div className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 font-bold text-blue-700">
+                      <div className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 font-bold text-blue-700 text-base">
                         {editDistance ? `${(editDistance / 1000).toFixed(3)} กม.` : '-'}
                       </div>
                     </div>
@@ -598,44 +574,53 @@ export default function ReportsPage() {
                 {!isRoadWork && (
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">รายละเอียด</label>
-                    <textarea value={editingPlan.details || ''} onChange={(e) => setEditingPlan({...editingPlan, details: e.target.value})} rows={3} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-amber-500 transition" />
+                    <textarea value={editingPlan.details || ''} onChange={(e) => setEditingPlan({...editingPlan, details: e.target.value})} rows={3} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 transition text-base" />
                   </div>
                 )}
 
-                {/* ⭐ เปลี่ยนปุ่มเป็น ไม่มีอุปสรรค / มีอุปสรรค ในหน้าแก้ไข */}
                 <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-                  <label className="mb-2 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
+                  <label className="mb-3 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
                   <div className="flex gap-3 mb-3">
                     <button
                       type="button"
                       onClick={() => setEditingPlan({...editingPlan, readiness: 'ไม่มีอุปสรรค'})}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-base transition border shadow-sm ${
                         editingPlan.readiness === 'ไม่มีอุปสรรค'
                           ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100'
                           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       ไม่มีอุปสรรค
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingPlan({...editingPlan, readiness: 'มีอุปสรรค'})}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition border shadow-sm ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-base transition border shadow-sm ${
                         editingPlan.readiness === 'มีอุปสรรค'
                           ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100'
                           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                       มีอุปสรรค
                     </button>
                   </div>
                   {editingPlan.readiness === 'มีอุปสรรค' && (
                     <div className="animate-in fade-in slide-in-from-top-2">
-                      <input type="text" value={editingPlan.problem || ''} onChange={(e) => setEditingPlan({...editingPlan, problem: e.target.value})} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm outline-none focus:border-red-500" />
+                      <input type="text" value={editingPlan.problem || ''} onChange={(e) => setEditingPlan({...editingPlan, problem: e.target.value})} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-base outline-none focus:border-red-500" />
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">หมายเหตุเพิ่มเติม</label>
+                  <textarea value={editingPlan.remarks || ''} onChange={(e) => setEditingPlan({...editingPlan, remarks: e.target.value})} rows={3} className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 transition text-base" placeholder="ระบุหมายเหตุ..." />
+                </div>
+
+                <div className="mt-auto pt-6 flex gap-3 border-t border-slate-200">
+                  <button type="button" onClick={() => setEditingPlan(null)} className="flex-1 rounded-xl border-2 border-slate-200 py-4 text-base font-bold text-slate-600 hover:bg-slate-50 transition">ยกเลิก</button>
+                  <button type="submit" className="flex-1 rounded-xl bg-amber-500 py-4 text-base font-bold text-white hover:bg-amber-600 shadow-md transition">💾 บันทึกการแก้ไข</button>
                 </div>
               </div>
 
@@ -645,25 +630,25 @@ export default function ReportsPage() {
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col gap-2">
                     <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
                       <span className="text-sm font-bold text-slate-700">โหมด:</span>
-                      <div className="flex bg-slate-100 p-1 rounded-lg">
-                        <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
-                        <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1 text-xs font-bold rounded-md transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
+                      <div className="flex bg-slate-100 p-1 rounded-md">
+                        <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1.5 text-xs font-bold rounded transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
+                        <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1.5 text-xs font-bold rounded transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
                       </div>
                     </div>
                     
                     <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
+                      <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="number" step="any" placeholder="Lat" value={editStartLat} onChange={(e) => { setEditStartLat(e.target.value); applyCoords('start', e.target.value, editStartLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
-                        <input type="number" step="any" placeholder="Lng" value={editStartLng} onChange={(e) => { setEditStartLng(e.target.value); applyCoords('start', editStartLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+                        <input type="number" step="any" placeholder="Lat" value={editStartLat} onChange={(e) => { setEditStartLat(e.target.value); applyCoords('start', e.target.value, editStartLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-emerald-500" />
+                        <input type="number" step="any" placeholder="Lng" value={editStartLng} onChange={(e) => { setEditStartLng(e.target.value); applyCoords('start', editStartLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-emerald-500" />
                       </div>
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-1.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
+                      <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="number" step="any" placeholder="Lat" value={editEndLat} onChange={(e) => { setEditEndLat(e.target.value); applyCoords('end', e.target.value, editEndLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
-                        <input type="number" step="any" placeholder="Lng" value={editEndLng} onChange={(e) => { setEditEndLng(e.target.value); applyCoords('end', editEndLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-red-500" />
+                        <input type="number" step="any" placeholder="Lat" value={editEndLat} onChange={(e) => { setEditEndLat(e.target.value); applyCoords('end', e.target.value, editEndLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-red-500" />
+                        <input type="number" step="any" placeholder="Lng" value={editEndLng} onChange={(e) => { setEditEndLng(e.target.value); applyCoords('end', editEndLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-red-500" />
                       </div>
                     </div>
 
@@ -682,7 +667,7 @@ export default function ReportsPage() {
                   </div>
                 )}
 
-                <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative">
+                <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 relative min-h-[300px]">
                   <MapPicker
                     mode={isRoadWork ? 'double' : 'single'}
                     start={isRoadWork ? editStart : editLocation}
@@ -712,11 +697,6 @@ export default function ReportsPage() {
                     fullHeight
                   />
                 </div>
-              </div>
-
-              <div className="col-span-1 lg:col-span-2 pt-4 flex gap-3 border-t border-slate-200 mt-2">
-                <button type="button" onClick={() => setEditingPlan(null)} className="flex-1 rounded-xl border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition">ยกเลิก</button>
-                <button type="submit" className="flex-1 rounded-xl bg-amber-500 py-3 text-sm font-bold text-white hover:bg-amber-600 shadow-md transition">💾 บันทึกการแก้ไข</button>
               </div>
             </form>
           </div>

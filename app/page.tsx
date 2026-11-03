@@ -213,8 +213,8 @@ export default function SurveyPage() {
   return (
     <div className="min-h-screen pb-20 bg-slate-50/50 w-full overflow-x-hidden">
       
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 md:py-4">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm w-full">
+        <div className="w-full px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 text-white p-2 rounded-xl shadow-inner">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -235,107 +235,121 @@ export default function SurveyPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl p-3 md:p-6 mt-2 md:mt-4">
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+      <main className="w-full px-4 md:px-6 py-4 md:py-6">
+        {/* ⭐ ใช้ grid-cols-12 และแบ่งเป็น 4 ต่อ 8 (33% : 66%) เพื่อให้ซ้ายแคบลงชัดเจน */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
           
-          <div className="lg:col-span-5 xl:col-span-4 rounded-2xl md:rounded-3xl bg-white p-4 md:p-6 shadow-sm border border-slate-200">
+          {/* ⭐ ฝั่งซ้าย 33% */}
+          <div className="lg:col-span-4 rounded-2xl md:rounded-3xl bg-white p-4 md:p-5 shadow-sm border border-slate-200">
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
-                <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer appearance-none">
-                  <option value="">-- เลือกหมู่บ้าน --</option>
-                  {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <label className="mb-2 block text-sm md:text-base font-bold text-slate-700">หมู่บ้าน <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <select value={village} onChange={(e) => setVillage(e.target.value)} className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
+                      <option value="">-- เลือก --</option>
+                      {VILLAGES.map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 md:px-3 text-slate-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm md:text-base font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
+                      <option value="">-- เลือก --</option>
+                      {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 md:px-3 text-slate-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
-                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition" />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">ประเภทงาน <span className="text-red-500">*</span></label>
-                <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer appearance-none">
-                  <option value="">-- เลือกประเภท --</option>
-                  {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <label className="mb-2 block text-sm md:text-base font-bold text-slate-700">ชื่อแผน <span className="text-red-500">*</span></label>
+                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="เช่น ก่อสร้างถนน คสล. สายบ้าน..." className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition" />
               </div>
 
               {isRoadWork && (
-                <div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 md:p-4">
+                <div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
                   
-                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-                    <span className="text-sm font-bold text-slate-700">โหมด:</span>
+                  <div className="flex items-center justify-between bg-white px-2 py-2 rounded-lg border border-slate-200 shadow-sm">
+                    <span className="text-xs md:text-sm font-bold text-slate-700">โหมด:</span>
                     <div className="flex bg-slate-100 p-1 rounded-md">
-                      <button type="button" onClick={() => setDrawMode(false)} className={`px-3 py-1.5 text-xs font-bold rounded transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
-                      <button type="button" onClick={() => setDrawMode(true)} className={`px-3 py-1.5 text-xs font-bold rounded transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
+                      <button type="button" onClick={() => setDrawMode(false)} className={`px-2 md:px-3 py-1 text-xs font-bold rounded transition ${!drawMode ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500'}`}>ตามถนน</button>
+                      <button type="button" onClick={() => setDrawMode(true)} className={`px-2 md:px-3 py-1 text-xs font-bold rounded transition ${drawMode ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-500'}`}>วาดเอง</button>
                     </div>
                   </div>
 
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <button type="button" onClick={() => setPicking('start')} className={`text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
+                  <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                    <button type="button" onClick={() => setPicking('start')} className={`text-xs md:text-sm px-2 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'start' ? 'bg-emerald-500 text-white ring-2 ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดเริ่มต้น</button>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="number" step="any" placeholder="Lat" value={startLat} onChange={(e) => { setStartLat(e.target.value); applyCoords('start', e.target.value, startLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base md:text-sm outline-none focus:border-emerald-500" />
-                      <input type="number" step="any" placeholder="Lng" value={startLng} onChange={(e) => { setStartLng(e.target.value); applyCoords('start', startLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base md:text-sm outline-none focus:border-emerald-500" />
+                      <input type="number" step="any" placeholder="Lat" value={startLat} onChange={(e) => { setStartLat(e.target.value); applyCoords('start', e.target.value, startLng); }} className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-emerald-500" />
+                      <input type="number" step="any" placeholder="Lng" value={startLng} onChange={(e) => { setStartLng(e.target.value); applyCoords('start', startLat, e.target.value); }} className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-emerald-500" />
                     </div>
                   </div>
 
-                  <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <button type="button" onClick={() => setPicking('end')} className={`text-sm px-3 py-2.5 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
+                  <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                    <button type="button" onClick={() => setPicking('end')} className={`text-xs md:text-sm px-2 py-2 rounded-lg font-bold transition shadow-sm w-full mb-2 ${picking === 'end' ? 'bg-red-500 text-white ring-2 ring-red-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>📍 เลือกจุดสิ้นสุด</button>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="number" step="any" placeholder="Lat" value={endLat} onChange={(e) => { setEndLat(e.target.value); applyCoords('end', e.target.value, endLng); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base md:text-sm outline-none focus:border-red-500" />
-                      <input type="number" step="any" placeholder="Lng" value={endLng} onChange={(e) => { setEndLng(e.target.value); applyCoords('end', endLat, e.target.value); }} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base md:text-sm outline-none focus:border-red-500" />
+                      <input type="number" step="any" placeholder="Lat" value={endLat} onChange={(e) => { setEndLat(e.target.value); applyCoords('end', e.target.value, endLng); }} className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-red-500" />
+                      <input type="number" step="any" placeholder="Lng" value={endLng} onChange={(e) => { setEndLng(e.target.value); applyCoords('end', endLat, e.target.value); }} className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-red-500" />
                     </div>
                   </div>
 
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-xs px-2 py-2.5 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                    <button type="button" onClick={() => setPicking('waypoint')} className={`flex-1 text-[11px] md:text-xs px-2 py-2 rounded-lg font-bold transition shadow-sm ${picking === 'waypoint' ? 'bg-amber-500 text-white ring-2 ring-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
                       {waypoints.length > 0 ? '📍 เพิ่มจุดผ่าน' : '📍 เพิ่มจุดผ่าน'}
                     </button>
                     {(start || end || waypoints.length > 0) && (
-                      <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-3 py-2.5 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-xs">
+                      <button type="button" onClick={handleClearAllPoints} className="bg-red-100 text-red-600 px-2 py-2 rounded-lg font-bold hover:bg-red-200 transition shadow-sm border border-red-200 text-[11px] md:text-xs">
                         🗑️ ล้างจุด
                       </button>
                     )}
                   </div>
                   {picking === 'waypoint' && <p className="text-[10px] text-amber-600 font-bold text-center animate-pulse">* คลิกแผนที่เพื่อเพิ่มจุดผ่าน</p>}
 
-                  <div className="flex gap-3 pt-1">
-                    <div className={`flex-1 rounded-xl p-2.5 border shadow-sm ${drawMode ? 'bg-orange-50 border-orange-200' : 'bg-white border-blue-200'}`}>
-                      <div className={`text-xs font-bold mb-0.5 ${drawMode ? 'text-orange-600' : 'text-slate-500'}`}>ระยะทาง</div>
-                      <div className={`font-black text-base ${drawMode ? 'text-orange-600' : 'text-blue-600'}`}>{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
+                  <div className="flex gap-2 pt-1">
+                    <div className={`flex-1 rounded-lg p-2 border shadow-sm ${drawMode ? 'bg-orange-50 border-orange-200' : 'bg-white border-blue-200'}`}>
+                      <div className={`text-[10px] font-bold mb-0.5 ${drawMode ? 'text-orange-600' : 'text-slate-500'}`}>ระยะทาง</div>
+                      <div className={`font-black text-sm md:text-base ${drawMode ? 'text-orange-600' : 'text-blue-600'}`}>{distance != null ? `${(distance / 1000).toFixed(3)} กม.` : '-'}</div>
                     </div>
                     <div className="flex-1">
-                      <label className="block text-xs font-bold text-slate-600 mb-1">ความกว้าง (ม.)</label>
-                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-base md:text-sm font-medium outline-none focus:border-blue-500 transition" />
+                      <label className="block text-[10px] md:text-xs font-bold text-slate-600 mb-1">ความกว้าง (ม.)</label>
+                      <input type="number" step="0.01" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="เช่น 4" className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm font-medium outline-none focus:border-blue-500 transition" />
                     </div>
                   </div>
                 </div>
               )}
 
               {isOtherWork && (
-                <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3 md:p-4">
+                <div className="space-y-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3">
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-sm font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
-                      <span className="text-xs font-bold bg-white px-2 py-0.5 rounded-lg border border-amber-200 text-slate-500">คลิกแผนที่</span>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs md:text-sm font-bold text-amber-600 flex items-center gap-1">📍 ตำแหน่งที่ตั้ง</span>
+                      <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded border border-amber-200 text-slate-500">คลิกแผนที่</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">รายละเอียด</label>
-                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-xl bg-white border border-slate-300 px-3 py-2.5 text-base md:text-sm font-medium outline-none focus:border-blue-500 transition" />
+                    <label className="block text-[10px] md:text-xs font-bold text-slate-600 mb-1">รายละเอียด</label>
+                    <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} placeholder="ระบุรายละเอียด..." className="w-full rounded-lg bg-white border border-slate-300 px-2 py-2 text-sm font-medium outline-none focus:border-blue-500 transition" />
                   </div>
                 </div>
               )}
 
-              <div className="rounded-xl border border-slate-200 p-3 md:p-4 bg-slate-50">
-                <label className="mb-2 block text-sm font-bold text-slate-700">สถานะอุปสรรค</label>
+              <div className="rounded-xl border border-slate-200 p-3 bg-slate-50">
+                <label className="mb-2 block text-sm md:text-base font-bold text-slate-700">สถานะอุปสรรค</label>
                 <div className="flex gap-2 mb-2">
                   <button
                     type="button"
                     onClick={() => setReadiness('ไม่มีอุปสรรค')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-xs md:text-sm transition border shadow-sm ${
                       readiness === 'ไม่มีอุปสรรค'
                         ? 'bg-white text-emerald-600 border-emerald-300 ring-2 ring-emerald-100'
                         : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
@@ -349,7 +363,7 @@ export default function SurveyPage() {
                   <button
                     type="button"
                     onClick={() => setReadiness('มีอุปสรรค')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold text-sm transition border shadow-sm ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg font-bold text-xs md:text-sm transition border shadow-sm ${
                       readiness === 'มีอุปสรรค'
                         ? 'bg-white text-red-600 border-red-300 ring-2 ring-red-100'
                         : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
@@ -363,29 +377,30 @@ export default function SurveyPage() {
                 </div>
                 {readiness === 'มีอุปสรรค' && (
                   <div className="animate-in fade-in slide-in-from-top-2">
-                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-lg border border-red-300 bg-red-50 px-3 py-2.5 text-base md:text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
+                    <input value={problem} onChange={(e) => setProblem(e.target.value)} placeholder="ระบุรายละเอียดอุปสรรค..." className="w-full rounded-lg border border-red-300 bg-red-50 px-2 py-2 text-sm font-medium text-red-800 placeholder-red-400 outline-none focus:ring-2 focus:ring-red-100 transition" />
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">หมายเหตุเพิ่มเติม</label>
+                <label className="mb-2 block text-sm md:text-base font-bold text-slate-700">หมายเหตุเพิ่มเติม</label>
                 <textarea 
                   value={remarks} 
                   onChange={(e) => setRemarks(e.target.value)} 
                   rows={3} 
                   placeholder="ระบุหมายเหตุหรือข้อมูลเพิ่มเติมที่นี่..." 
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition resize-none" 
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 text-sm md:text-base font-medium outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition resize-none" 
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 text-base font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-base font-black text-white transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:opacity-50 shadow-md">
                 {loading ? '⏳ กำลังบันทึก...' : '💾 ส่งบันทึกข้อมูล'}
               </button>
             </form>
           </div>
 
-          <div className="lg:col-span-5 xl:col-span-6 h-[400px] md:h-[500px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-24 rounded-2xl md:rounded-3xl bg-white p-1.5 md:p-2 shadow-sm border border-slate-200 overflow-hidden">
+          {/* ⭐ ฝั่งขวา 66% */}
+          <div className="lg:col-span-8 h-[500px] md:h-[600px] lg:h-[calc(100vh-8rem)] lg:sticky lg:top-24 rounded-2xl md:rounded-3xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden">
             <div className="w-full h-full rounded-xl md:rounded-2xl overflow-hidden relative">
                <MapPicker
                 mode={isOtherWork ? 'single' : 'double'}
