@@ -302,9 +302,8 @@ export default function ReportsPage() {
   const isRoadWork = editingPlan ? ROAD_WORK_TYPES.includes(editingPlan.plan_type) : false;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col w-full">
+    <div className="min-h-screen bg-slate-50 flex flex-col w-full overflow-hidden">
       
-      {/* ⭐ Header เต็มความกว้าง */}
       <header className="flex-shrink-0 bg-white border-b border-slate-200 w-full px-4 md:px-6 py-3 shadow-sm z-10 sticky top-0">
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-3">
@@ -324,11 +323,11 @@ export default function ReportsPage() {
         </div>
       </header>
 
-      {/* ⭐ Main เต็มความกว้าง */}
-      <main className="flex-1 w-full p-3 md:p-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* ⭐ ใช้ Grid 12 คอลัมน์ ซ้าย 4 ขวา 8 */}
+      <main className="flex-1 w-full p-3 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
         
-        {/* ================= ฝั่งซ้าย (40%) ================= */}
-        <div className="lg:col-span-2 flex flex-col gap-4 h-[calc(100vh-6rem)] lg:h-[calc(100vh-5rem)]">
+        {/* ฝั่งซ้าย (4/12) */}
+        <div className="lg:col-span-4 flex flex-col gap-4 h-[calc(100vh-6rem)] lg:h-[calc(100vh-5rem)] min-w-0">
           
           <div className="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3 shrink-0">
             <div className="relative">
@@ -336,7 +335,6 @@ export default function ReportsPage() {
               <input type="text" placeholder="ค้นหาชื่อแผน..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-base font-medium outline-none focus:border-blue-400 focus:bg-white transition" />
             </div>
             
-            {/* ⭐ หมู่บ้าน และ ประเภทงาน อยู่ข้างกัน + Custom Arrow */}
             <div className="grid grid-cols-2 gap-2">
               <div className="relative">
                 <select value={filterVillage} onChange={(e) => setFilterVillage(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
@@ -359,7 +357,6 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* ⭐ ตัวกรองสถานะอุปสรรค + ปุ่มล้างค่า */}
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <select value={filterReadiness} onChange={(e) => setFilterReadiness(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-blue-400 transition cursor-pointer appearance-none pr-8">
@@ -440,8 +437,8 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* ================= ฝั่งขวา (60%) ================= */}
-        <div className="lg:col-span-3 h-[500px] lg:h-[calc(100vh-5rem)] lg:sticky lg:top-[5rem] rounded-2xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden">
+        {/* ฝั่งขวา (8/12) */}
+        <div className="lg:col-span-8 h-[500px] lg:h-[calc(100vh-5rem)] lg:sticky lg:top-[5rem] rounded-2xl bg-white p-2 shadow-sm border border-slate-200 overflow-hidden min-w-0">
           <div className="w-full h-full rounded-xl overflow-hidden relative">
             {loading ? (
               <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400 font-medium">กำลังโหลดแผนที่...</div>

@@ -140,7 +140,6 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
       : "relative w-full h-full rounded-2xl overflow-hidden shadow-inner border border-slate-200"
     }>
       
-      {/* ⭐ ปรับตำแหน่งปุ่มให้ชิดขอบขวาไม่ล้นจอ (right-2 md:right-3) */}
       <div className="absolute top-2 right-2 md:top-3 md:right-3 z-[1000] flex flex-col items-end gap-2">
         <button
           type="button"
@@ -214,13 +213,35 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                     },
                   }}
                 >
+                  {/* ⭐ ปรับ Tooltip: กำหนดความกว้างขั้นต่ำ-สูงสุด และใช้ line-clamp-2 กับชื่อแผน */}
                   <Tooltip sticky>
-                    <div className="text-center p-1">
-                      <div className="font-bold text-sm text-slate-800 mb-0.5">{plan.plan_name}</div>
-                      <div className="text-[11px] text-slate-500 font-medium">{plan.plan_type}</div>
-                      <div className="text-xs font-bold text-blue-600 mt-1.5 bg-blue-100 px-2 py-1 rounded-md inline-block">
+                    <div className="text-center p-1 w-[220px] md:w-[240px]">
+                      <div className="font-bold text-sm text-slate-800 mb-1 leading-tight line-clamp-2">
+                        {plan.plan_name}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium mb-2 line-clamp-1">
+                        {plan.plan_type}
+                      </div>
+                      
+                      <div className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-md inline-block w-full">
                         📏 ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
                       </div>
+
+                      {plan.problem && (
+                        <div className="mt-1.5 text-[11px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded-md border border-red-100 whitespace-normal text-left w-full">
+                          ⚠️ อุปสรรค: {plan.problem}
+                        </div>
+                      )}
+                      {plan.remarks && (
+                        <div className="mt-1.5 text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-1 rounded-md border border-slate-200 whitespace-normal text-left w-full">
+                          📝 หมายเหตุ: {plan.remarks}
+                        </div>
+                      )}
+                      {plan.details && (
+                        <div className="mt-1.5 text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-1 rounded-md border border-slate-200 whitespace-normal text-left w-full">
+                          ℹ️ รายละเอียด: {plan.details}
+                        </div>
+                      )}
                     </div>
                   </Tooltip>
                 </Polyline>
@@ -233,6 +254,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
                         ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
                       </div>
+                      {plan.problem && <div className="text-xs text-red-600 mb-2 bg-red-50 py-1 rounded">⚠️ {plan.problem}</div>}
                       {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
                       <div className="font-bold text-emerald-600 text-xs mb-1">🟢 จุดเริ่มต้น</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${startPoint[0]},${startPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
@@ -248,6 +270,7 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
                       <div className="text-xs font-bold text-blue-600 mb-2 bg-blue-100 py-1 rounded">
                         ระยะทาง: {plan.distance_m ? (plan.distance_m / 1000).toFixed(3) : '0.000'} กม.
                       </div>
+                      {plan.problem && <div className="text-xs text-red-600 mb-2 bg-red-50 py-1 rounded">⚠️ {plan.problem}</div>}
                       {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
                       <div className="font-bold text-red-600 text-xs mb-1">🔴 จุดสิ้นสุด</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${endPoint[0]},${endPoint[1]}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
@@ -262,17 +285,40 @@ export default function ReportsMap({ plans }: { plans: VillagePlan[] }) {
             return (
               <div key={plan.id}>
                 <Marker position={[plan.location_lat, plan.location_lng]} icon={defaultIcon}>
+                  {/* ⭐ ปรับ Tooltip: กำหนดความกว้างขั้นต่ำ-สูงสุด และใช้ line-clamp-2 กับชื่อแผน */}
                   <Tooltip direction="top" offset={[0, -40]}>
-                    <div className="text-center">
-                      <div className="font-bold text-sm text-slate-800">{plan.plan_name}</div>
-                      <div className="text-xs text-slate-500 font-medium">{plan.plan_type}</div>
+                    <div className="text-center p-1 w-[220px] md:w-[240px]">
+                      <div className="font-bold text-sm text-slate-800 leading-tight mb-1 line-clamp-2">
+                        {plan.plan_name}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium mb-2 line-clamp-1">
+                        {plan.plan_type}
+                      </div>
+                      
+                      {plan.problem && (
+                        <div className="mt-1.5 text-[11px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded-md border border-red-100 whitespace-normal text-left w-full">
+                          ⚠️ อุปสรรค: {plan.problem}
+                        </div>
+                      )}
+                      {plan.remarks && (
+                        <div className="mt-1.5 text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-1 rounded-md border border-slate-200 whitespace-normal text-left w-full">
+                          📝 หมายเหตุ: {plan.remarks}
+                        </div>
+                      )}
+                      {plan.details && (
+                        <div className="mt-1.5 text-[11px] text-slate-600 font-bold bg-slate-100 px-2 py-1 rounded-md border border-slate-200 whitespace-normal text-left w-full">
+                          ℹ️ รายละเอียด: {plan.details}
+                        </div>
+                      )}
                     </div>
                   </Tooltip>
                   <Popup>
                     <div className="text-center p-1 min-w-[150px]">
                       <div className="font-bold text-slate-800 mb-1 text-sm">{plan.plan_name}</div>
                       <div className="text-xs text-slate-500 font-medium mb-2">{plan.plan_type}</div>
+                      {plan.problem && <div className="text-xs text-red-600 mb-2 bg-red-50 py-1 rounded">⚠️ {plan.problem}</div>}
                       {plan.remarks && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">📝 {plan.remarks}</div>}
+                      {plan.details && <div className="text-xs text-slate-600 mb-2 bg-slate-100 py-1 rounded">ℹ️ {plan.details}</div>}
                       <div className="font-bold text-blue-600 text-xs mb-2">📍 ตำแหน่งที่ตั้ง</div>
                       <a href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${plan.location_lat},${plan.location_lng}`} target="_blank" rel="noopener noreferrer" style={btnStyle}>🌍 Street View</a>
                     </div>
